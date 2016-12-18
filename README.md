@@ -53,7 +53,8 @@ Dependencies
 The script has no dependencies other than Python 2.7, 3.3 or above.  It runs
 the validation commands using the shell.  The ones necessary ones for checked
 repositories need to be installed separately, and need to be available on
-the `PATH`.  See the complete list of commands on the [script](pre-receive.py).
+the `PATH`.  See the complete list of commands at the end of
+the [script](pre-receive.py).
 
 Installation
 ------------

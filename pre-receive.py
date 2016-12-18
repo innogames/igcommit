@@ -28,44 +28,6 @@ import fileinput
 from subprocess import check_output, Popen, PIPE, STDOUT
 
 
-def configure():
-    """The configuration of the checks
-
-    This could go to a configuration file.
-    """
-    CommitList.checks = (
-        CheckDuplicateCommitSummaries(),
-    )
-    Commit.checks = (
-        CheckMisleadingMergeCommit(),
-        CheckCommitMessage(),
-        CheckCommitSummary(),
-        CheckCommitTags(),
-        CheckChangedFilePaths(),
-    )
-    ChangedFile.checks = (
-        CheckCmd(
-            'puppet parser validate --color=false '
-            '--confdir=/tmp --vardir=/tmp',
-            extension='pp',
-        ),
-        CheckCmd(
-            'puppet-lint --fail-on-warnings --no-autoloader_layout-check '
-            '/dev/stdin',
-            extension='pp',
-        ),
-        CheckCmd(
-            'flake8 /dev/stdin',
-            extension='py',
-        ),
-        CheckCmdWithConfig(
-            'jscs --max-errors=-1 --reporter=unix',
-            extension='js',
-            config_name='.jscs.json',
-        ),
-    )
-
-
 def main():
     """The main program"""
     commits = CommitList.read_from_input()
@@ -74,9 +36,8 @@ def main():
     if not all(commits):
         raise SystemExit('New commits with deletes')
 
-    configure()
     failed = False
-    for result in commits.check_all_new():
+    for result in commits.get_all_new_commits().get_results(**configuration):
         if result.failed():
             result.print_section()
             if not result.can_soft_fail():
@@ -92,17 +53,7 @@ class Named(object):
         return type(self).__name__
 
 
-class Checkable(Named):
-    """Abstract class for check-ables"""
-    checks = ()
-
-    def check(self):
-        """Execute the checks yielding the results"""
-        for check in self.checks:
-            yield Result(self, check)
-
-
-class CommitList(list, Checkable):
+class CommitList(list, Named):
     """Routines on list of commits"""
 
     @classmethod
@@ -114,45 +65,6 @@ class CommitList(list, Checkable):
         """Build a commit list from the standart input"""
         return cls.build(l.split(None, 2)[1] for l in fileinput.input())
 
-    def check_all_new(self):
-        """Check everything for all new commits
-
-        We are checking the actual commits on the list too, even if they
-        are not new.  This, at least, makes testing easier.
-        """
-        new_commits = self.get_new_commits()
-        for commit in self:
-            if commit not in new_commits:
-                new_commits.append(commit)
-        for result in new_commits.check_all():
-            yield result
-
-    def check_all(self):
-        """Check everything of the commit list"""
-        for result in self.check():
-            yield result
-
-        failed_paths = []
-        for commit in self:
-            for result in commit.check():
-                yield result
-
-            for changed_file in commit.get_changed_files():
-                # We are not bothering to check the files on the following
-                # commits again, if the check already failed on them.
-                if changed_file.path in failed_paths:
-                    continue
-
-                for result in changed_file.check():
-                    yield result
-
-                    if result.failed():
-                        failed_paths.append(changed_file.path)
-
-                        # It probably doesn't make sense to run the following
-                        # checks on this file as the previous one failed.
-                        break
-
     def get_new_commits(self):
         """Get the list of parent new commits in order"""
         cmd = (
@@ -162,14 +74,57 @@ class CommitList(list, Checkable):
         output = check_output(cmd, shell=True).decode()
         return CommitList.build(reversed(output.splitlines()))
 
+    def get_all_new_commits(self):
+        """Get the list of new commits with the current ones
 
-class Commit(Checkable):
+        Appending the actual commits on the list to the new ones makes testing
+        easier.
+        """
+        all_new_commits = self.get_new_commits()
+        for commit in self:
+            if commit not in all_new_commits:
+                all_new_commits.append(commit)
+        return all_new_commits
+
+    def get_results(self, commit_list_checks, commit_checks, file_checks):
+        """Check everything of the commit list"""
+        for check in commit_list_checks:
+            yield Result(self, check)
+
+        failed_paths = []
+        for commit in self:
+            for check in commit_checks:
+                yield Result(commit, check)
+
+            changed_file_checks = [
+                c for c in file_checks if c.relevant_on_commit(commit)
+            ]
+
+            for changed_file in commit.get_changed_files():
+                # We are not bothering to check the files on the following
+                # commits again, if the check already failed on them.
+                if changed_file.path in failed_paths:
+                    continue
+
+                for check in changed_file_checks:
+                    result = Result(changed_file, check)
+                    yield result
+
+                    if result.failed():
+                        failed_paths.append(changed_file.path)
+
+                        # It probably doesn't make sense to run the following
+                        # checks on this file as the previous one failed.
+                        break
+
+
+class Commit(Named):
+    """Routines on a single commit"""
     null_commit_id = '0000000000000000000000000000000000000000'
 
     def __init__(self, commit_id):
         self.commit_id = commit_id
         self.message = None
-        self.all_file_paths = None
         self.changed_files = None
 
     def __str__(self):
@@ -207,18 +162,6 @@ class Commit(Checkable):
     def can_soft_fail(self):
         return any(t in ('MESS', 'WIP') for t in self.parse_tags()[0])
 
-    def get_all_file_paths(self):
-        """Return the list of added or modified files on a commit"""
-        if self.all_file_paths is None:
-            cmd = 'git ls-tree --name-only -r {}'.format(self.commit_id)
-            self.all_file_paths = set(
-                check_output(cmd, shell=True).decode().splitlines()
-            )
-        return self.all_file_paths
-
-    def file_exists(self, path):
-        return path in self.get_all_file_paths()
-
     def get_changed_files(self):
         """Return the list of added or modified files on a commit"""
         if self.changed_files is None:
@@ -228,19 +171,14 @@ class Commit(Checkable):
                 .format(self.commit_id)
             )
             self.changed_files = [
-                ChangedFile(self, path)
+                CommittedFile(self, path)
                 for path in check_output(cmd, shell=True).decode().splitlines()
             ]
         return self.changed_files
 
-    def get_file_content(self, path):
-        """Return the content of a file on a commit as bytes"""
-        cmd = 'git show {}:{}'.format(self.commit_id, path)
-        return check_output(cmd, shell=True)
 
-
-class ChangedFile(Checkable):
-    """Changed file to be checked"""
+class CommittedFile(Named):
+    """Routines on a single committed file"""
 
     def __init__(self, commit, path):
         self.commit = commit
@@ -249,11 +187,34 @@ class ChangedFile(Checkable):
     def __str__(self):
         return '{} at {}'.format(self.path, self.commit)
 
+    def __eq__(self, other):
+        return (
+            isinstance(other, CommittedFile) and
+            self.commit == other.commit and
+            self.path == other.path
+        )
+
+    def exists(self):
+        cmd = (
+            'git ls-tree --name-only -r {} {}'
+            .format(self.commit.commit_id, self.path)
+        )
+        return bool(check_output(cmd, shell=True))
+
+    def changed(self):
+        return self in self.commit.get_changed_files()
+
     def get_extension(self):
         return self.path.rsplit('.', 1)[-1]
 
     def get_content(self):
-        return self.commit.get_file_content(self.path)
+        """Return the content of a file on a commit as bytes"""
+        cmd = 'git show {}:{}'.format(self.commit.commit_id, self.path)
+        return check_output(cmd, shell=True)
+
+    def write(self):
+        with open(self.path, 'wb') as fd:
+            fd.write(self.get_content())
 
 
 class Result(object):
@@ -261,40 +222,42 @@ class Result(object):
     def __init__(self, checkable, check):
         self.checkable = checkable
         self.check = check
-        self.generator = check(checkable)
-        # We have to buffer the first line to see if there are any problems.
-        self.first_line = None
+        self.problems = check.get_problems(checkable)
+        # We have to buffer the first problem to see if there are any.
+        self.first_problem = None
 
     def failed(self):
-        if self.first_line:
+        if self.first_problem:
             return True
-        for line in self.generator:
-            self.first_line = line
+        for problem in self.problems:
+            # Problem cannot be empty.
+            assert problem
+            self.first_problem = problem
             return True
         return False
 
     def can_soft_fail(self):
         return (
-            isinstance(self.checkable, ChangedFile) and
+            isinstance(self.checkable, CommittedFile) and
             self.checkable.commit.can_soft_fail()
         )
 
     def print_section(self):
         print('=== {} on {} ==='.format(self.check, self.checkable))
-        if self.first_line:
-            print('* {}'.format(self.first_line))
-        for line in self.generator:
-            print('* {}'.format(line))
+        if self.first_problem:
+            print('* {}'.format(self.first_problem))
+        for problem in self.problems:
+            print('* {}'.format(problem))
         print('')
 
 
 class Check(Named):
-    def __call__(self, checkable):
-        pass
+    def get_problems(self, checkable):
+        raise NotImplementedError()
 
 
 class CheckDuplicateCommitSummaries(Check):
-    def __call__(self, commit_list):
+    def get_problems(self, commit_list):
         duplicate_summaries = [()]  # Nothing starts with an empty tuple.
         for commit in sorted(commit_list, key=Commit.get_summary):
             summary = commit.get_summary()
@@ -308,14 +271,14 @@ class CheckDuplicateCommitSummaries(Check):
 
 
 class CheckMisleadingMergeCommit(Check):
-    def __call__(self, commit):
+    def get_problems(self, commit):
         summary = commit.get_summary()
         if summary.startswith("Merge branch 'master'"):
             yield summary
 
 
 class CheckCommitMessage(Check):
-    def __call__(self, commit):
+    def get_problems(self, commit):
         for line_id, line in enumerate(commit.get_message().splitlines()):
             if line_id == 1 and line:
                 yield 'has no summary'
@@ -328,7 +291,7 @@ class CheckCommitMessage(Check):
 
 
 class CheckCommitSummary(Check):
-    def __call__(self, commit):
+    def get_problems(self, commit):
         tags, rest = commit.parse_tags()
         if '  ' in rest:
             yield 'multiple spaces'
@@ -389,7 +352,7 @@ class CheckCommitTags(Check):
         '!!',
     }
 
-    def __call__(self, commit):
+    def get_problems(self, commit):
         used_tags = []
         for tag in commit.parse_tags()[0]:
             tag_upper = tag.upper()
@@ -403,7 +366,7 @@ class CheckCommitTags(Check):
 
 
 class CheckChangedFilePaths(Check):
-    def __call__(self, commit):
+    def get_problems(self, commit):
         for changed_file in commit.get_changed_files():
             extension = changed_file.get_extension()
             if (
@@ -413,7 +376,12 @@ class CheckChangedFilePaths(Check):
                 yield '{} has upper case'.format(changed_file)
 
 
-class CheckCmd(Check):
+class CheckCommittedFile(Check):
+    def relevant_on_commit(self, commit):
+        return True
+
+
+class CheckCmd(CheckCommittedFile):
     """Check command to be executed on file contents"""
     def __init__(self, cmd, extension=None):
         self.cmd = cmd
@@ -423,7 +391,7 @@ class CheckCmd(Check):
         binary = self.cmd.split(None, 1)[0]
         return '{} "{}"'.format(super(CheckCmd, self).__str__(), binary)
 
-    def __call__(self, changed_file):
+    def get_problems(self, changed_file):
         if self.extension and self.extension != changed_file.get_extension():
             return
         process = Popen(
@@ -439,24 +407,57 @@ class CheckCmd(Check):
 class CheckCmdWithConfig(CheckCmd):
     def __init__(self, cmd, config_name, **kwargs):
         super(CheckCmdWithConfig, self).__init__(cmd, **kwargs)
-        self.config_name = config_name
-        self.config_commit = None
+        self.config_file = CommittedFile(None, config_name)
 
-    def __call__(self, changed_file):
-        if changed_file.commit != self.config_commit:
-            self.update_config(changed_file.commit)
-        if not self.config_exists:
-            return
-        for line in super(CheckCmdWithConfig, self).__call__(changed_file):
-            yield line
+    def relevant_on_commit(self, commit):
+        prev_commit = self.config_file.commit
+        assert prev_commit != commit
+        self.config_file.commit = commit
+        if not self.config_file.exists():
+            return False
 
-    def update_config(self, commit):
-        self.config_commit = commit
-        self.config_exists = commit.file_exists(self.config_name)
-        if self.config_exists:
-            with open(self.config_name, 'w') as fd:
-                fd.write(commit.get_file_content(self.config_name))
+        # If the file is not changed on this commit, we can skip downloading.
+        if prev_commit and not self.config_file.changed():
+            return True
 
+        self.config_file.write()
+        return True
+
+
+# This could go to a configuration file.
+configuration = {
+    'commit_list_checks': (
+        CheckDuplicateCommitSummaries(),
+    ),
+    'commit_checks': (
+        CheckMisleadingMergeCommit(),
+        CheckCommitMessage(),
+        CheckCommitSummary(),
+        CheckCommitTags(),
+        CheckChangedFilePaths(),
+    ),
+    'file_checks': (
+        CheckCmd(
+            'puppet parser validate --color=false '
+            '--confdir=/tmp --vardir=/tmp',
+            extension='pp',
+        ),
+        CheckCmd(
+            'puppet-lint --fail-on-warnings --no-autoloader_layout-check '
+            '/dev/stdin',
+            extension='pp',
+        ),
+        CheckCmd(
+            'flake8 /dev/stdin',
+            extension='py',
+        ),
+        CheckCmdWithConfig(
+            'jscs --max-errors=-1 --reporter=unix',
+            extension='js',
+            config_name='.jscs.json',
+        ),
+    ),
+}
 
 if __name__ == '__main__':
     main()
