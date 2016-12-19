@@ -31,21 +31,31 @@ results = commits.get_all_new_commits().get_results(
     ),
     file_checks=(
         file_checks.CheckCmd(
-            'puppet parser validate --color=false '
-            '--confdir=/tmp --vardir=/tmp',
+            (
+                'puppet',
+                'parser',
+                'validate',
+                '--color=false',
+                '--confdir=/tmp',
+                '--vardir=/tmp',
+            ),
             extension='pp',
         ),
         file_checks.CheckCmd(
-            'puppet-lint --fail-on-warnings --no-autoloader_layout-check '
-            '/dev/stdin',
+            (
+                'puppet-lint',
+                '--fail-on-warnings',
+                '--no-autoloader_layout-check',
+                '/dev/stdin',
+            ),
             extension='pp',
         ),
         file_checks.CheckCmd(
-            'flake8 /dev/stdin',
+            ('flake8', '/dev/stdin'),
             extension='py',
         ),
         file_checks.CheckCmdWithConfig(
-            'jscs --max-errors=-1 --reporter=unix',
+            ('jscs', '--max-errors=-1', '--reporter=unix'),
             extension='js',
             config_name='.jscs.json',
         ),

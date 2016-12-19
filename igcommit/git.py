@@ -57,17 +57,14 @@ class CommitList(list):
             for check in commit_checks:
                 yield Result(commit, check)
 
-            changed_file_checks = [
-                c for c in file_checks if c.relevant_on_commit(commit)
-            ]
-
+            checks = [c for c in file_checks if c.possible(commit)]
             for changed_file in commit.get_changed_files():
                 # We are not bothering to check the files on the following
                 # commits again, if the check already failed on them.
                 if changed_file.path in failed_paths:
                     continue
 
-                for check in changed_file_checks:
+                for check in checks:
                     result = Result(changed_file, check)
                     yield result
 
