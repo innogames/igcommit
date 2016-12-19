@@ -1,8 +1,8 @@
 InnoGames Commit Validation Script
 ==================================
 
-The repository consist of just one Python file to be used as Git pre-receive
-hook to validate pushed commits on the server side.
+The repository provides a Git pre-receive hook to validate pushed commits on
+the server side.
 
 Features
 --------
@@ -53,8 +53,7 @@ Dependencies
 The script has no dependencies other than Python 2.7, 3.3 or above.  It runs
 the validation commands using the shell.  The ones necessary ones for checked
 repositories need to be installed separately, and need to be available on
-the `PATH`.  See the complete list of commands at the end of
-the [script](pre-receive.py).
+the `PATH`.  See the complete list of commands on the [script](pre-receive.py).
 
 Installation
 ------------
@@ -125,8 +124,7 @@ for most people without any configuration.
 License
 -------
 
-The script is released under the MIT License.  The license text is included
-on the script.  The MIT License is registered with and approved by
-the Open Source Initiative [1].
+The script is released under the MIT License.  The MIT License is registered
+with and approved by the Open Source Initiative [1].
 
 [1] https://opensource.org/licenses/MIT
