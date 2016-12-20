@@ -55,17 +55,17 @@ Dependencies
 The script has no dependencies other than Python 2.7, 3.3 or above.  It runs
 the validation commands using the shell.  The necessary ones for checked
 repositories need to be installed separately.  See the complete list of
-commands on the [script](pre-receive.py).  The commands which are not available
-on the `PATH` is not going to be used.
+commands on the [script](igcommit-receive).  The commands which are not
+available on the `PATH` is not going to be used.
 
 Installation
 ------------
 
-Link the [script](pre-receive.py) to `hooks/pre-receive` on you Git
+Link the [script](igcommit-receive) to `hooks/pre-receive` on you Git
 repositories on your Git server:
 
 ```shell
-ln -s pre-receive.py /home/git/repositories/myproject.git/hooks/pre-receive
+ln -s igcommit-receive /home/git/repositories/myproject.git/hooks/pre-receive
 ```
 
 FAQ
@@ -114,7 +114,7 @@ be active on different Git repositories.  You can run a command like this
 to test it on a Git repository against last 50 commits:
 
 ```shell
-git log --oneline HEAD~50..HEAD | sed 's/^/x /' | python ../igcommit/pre-receive.py
+git log --oneline HEAD~50..HEAD | sed 's/^/x /' | python ../igcommit/igcommit-receive
 ```
 
 Contributing
