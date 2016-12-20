@@ -55,7 +55,7 @@ results = commits.get_all_new_commits().get_results(
             extension='py',
         ),
         file_checks.CheckCmdWithConfig(
-            ('jscs', '--max-errors=-1', '--reporter=unix'),
+            ('jscs', '--max-errors=-1', '--reporter=unix', '/dev/stdin'),
             extension='js',
             config_name='.jscs.json',
         ),

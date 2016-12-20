@@ -35,12 +35,12 @@ Here is an example problem output:
 * past tense used on summary
 
 === CheckCmd "flake8" on src/check_multiple.py at 6bded65 ===
-* /dev/stdin:7:80: E501 line too long (140 > 79 characters)
-* /dev/stdin:8:80: E501 line too long (201 > 79 characters)
-* /dev/stdin:9:80: E501 line too long (106 > 79 characters)
-* /dev/stdin:10:5: E225 missing whitespace around operator
-* /dev/stdin:17:80: E501 line too long (122 > 79 characters)
-* /dev/stdin:17:85: E203 whitespace before ','
+* line 7:80: E501 line too long (140 > 79 characters)
+* line 8:80: E501 line too long (201 > 79 characters)
+* line 9:80: E501 line too long (106 > 79 characters)
+* line 10:5: E225 missing whitespace around operator
+* line 17:80: E501 line too long (122 > 79 characters)
+* line 17:85: E203 whitespace before ','
 
 === CheckCommitMessage on 6fdbc00 ===
 * line 7 is longer than 80

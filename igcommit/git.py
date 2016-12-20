@@ -203,7 +203,7 @@ class Result():
     def print_section(self):
         print('=== {} on {} ==='.format(self.check, self.checkable))
         if self.first_problem:
-            print('* {}'.format(self.first_problem))
+            print('* ' + self.first_problem)
         for problem in self.problems:
-            print('* {}'.format(problem))
+            print('* ' + problem)
         print('')

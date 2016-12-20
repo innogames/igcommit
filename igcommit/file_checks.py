@@ -34,10 +34,12 @@ class CheckCmd():
         args = (self.get_executable_path(), ) + self.args[1:]
         process = Popen(args, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
         content = changed_file.get_content()
-        output = process.communicate(content)[0]
+        output = process.communicate(content)[0].decode()
         if process.returncode != 0:
             for line in output.splitlines():
-                yield line.decode().strip()
+                if line.startswith('/dev/stdin:'):
+                    line = 'line ' + line[len('/dev/stdin:'):]
+                yield line
 
 
 class CheckCmdWithConfig(CheckCmd):
