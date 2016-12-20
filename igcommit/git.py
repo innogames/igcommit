@@ -28,7 +28,7 @@ class CommitList(list):
     def get_new_commits(self):
         """Get the list of parent new commits in order"""
         cmd = (
-            'git rev-list {} --not --all'
+            'git rev-list {} --not --all --reverse'
             .format(' '.join(c.commit_id for c in self))
         )
         output = check_output(cmd, shell=True).decode()
