@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """igcommit - Checks on Git commits
 
 Copyright (c) 2016, InnoGames GmbH

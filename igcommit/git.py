@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """igcommit - InnoGames Commit Validation Script
 
 This the pre-receive script for Git repositories to validate pushed commits
