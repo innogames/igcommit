@@ -20,6 +20,7 @@ Features
 * Check executable bits and shebangs
 * Check Puppet files with `puppet parser validate` and `puppet-lint`
 * Check Python files with `flake8`
+* Check shell scripts with `shellcheck`
 * Check JavaScript files with `jscs` (requires `.jscs.json` on repository)
 
 Here is an example problem output:

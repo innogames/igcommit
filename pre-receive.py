@@ -56,6 +56,10 @@ results = commits.get_all_new_commits().get_results(
             ('flake8', '/dev/stdin'),
             extension='py',
         ),
+        file_checks.CheckCmd(
+            ('shellcheck', '--format=gcc', '/dev/stdin'),
+            extension='sh',
+        ),
         file_checks.CheckCmdWithConfig(
             ('jscs', '--max-errors=-1', '--reporter=unix', '/dev/stdin'),
             extension='js',
