@@ -57,7 +57,7 @@ class CommitList(list):
             for check in commit_checks:
                 yield Result(commit, check)
 
-            checks = [c for c in file_checks if c.possible(commit)]
+            checks = [c for c in file_checks if c.possible_on_commit(commit)]
             for changed_file in commit.get_changed_files():
                 # We are not bothering to check the files on the following
                 # commits again, if the check already failed on them.
@@ -65,6 +65,9 @@ class CommitList(list):
                     continue
 
                 for check in checks:
+                    if not check.possible_on_file(changed_file):
+                        continue
+
                     result = Result(changed_file, check)
                     yield result
 
@@ -76,7 +79,7 @@ class CommitList(list):
                         break
 
 
-class Commit():
+class Commit(object):
     """Routines on a single commit"""
     null_commit_id = '0000000000000000000000000000000000000000'
 
@@ -124,23 +127,30 @@ class Commit():
         """Return the list of added or modified files on a commit"""
         if self.changed_files is None:
             cmd = (
-                'git diff-tree -r --no-commit-id --name-only --break-rewrites '
+                'git diff-tree -r --no-commit-id --break-rewrites '
                 '--no-renames --diff-filter=AM {}'
                 .format(self.commit_id)
             )
-            self.changed_files = [
-                CommittedFile(self, path)
-                for path in check_output(cmd, shell=True).decode().splitlines()
-            ]
+            changed_files = []
+            for line in check_output(cmd, shell=True).decode().splitlines():
+                line_split = line.split()
+                assert len(line_split) == 6
+                assert line_split[0].startswith(':')
+                file_mode = line_split[1]
+                file_path = line_split[5]
+                changed_files.append(CommittedFile(self, file_path, file_mode))
+            self.changed_files = changed_files
         return self.changed_files
 
 
-class CommittedFile():
+class CommittedFile(object):
     """Routines on a single committed file"""
 
-    def __init__(self, commit, path):
+    def __init__(self, commit, path, mode=None):
         self.commit = commit
         self.path = path
+        self.mode = mode
+        self.shebang = None
 
     def __str__(self):
         return '{} at {}'.format(self.path, self.commit)
@@ -162,20 +172,56 @@ class CommittedFile():
     def changed(self):
         return self in self.commit.get_changed_files()
 
+    def owner_can_execute(self):
+        assert len(self.mode) > 3
+        owner_bits = int(self.mode[-3])
+        return bool(owner_bits & 1)
+
     def get_extension(self):
-        return self.path.rsplit('.', 1)[-1]
+        if '.' in self.path:
+            return self.path.rsplit('.', 1)[1]
 
     def get_content(self):
         """Return the content of a file on a commit as bytes"""
         cmd = 'git show {}:{}'.format(self.commit.commit_id, self.path)
         return check_output(cmd, shell=True)
 
+    def get_shebang(self):
+        if self.shebang is None:
+            for line in self.get_content().splitlines():
+                if line.startswith(b'#!'):
+                    self.shebang = line[len('#!'):].decode()
+                else:
+                    self.shebang = ''
+                break
+        return self.shebang
+
+    def get_shebang_exe(self):
+        shebang = self.get_shebang()
+        if not shebang:
+            return None
+        shebang_split = shebang.split(None, 2)
+        if shebang_split[0] == '/usr/bin/env' and len(shebang_split) > 1:
+            return shebang_split[1]
+        return shebang_split[0]
+
     def write(self):
         with open(self.path, 'wb') as fd:
             fd.write(self.get_content())
 
 
-class Result():
+class Check(object):
+    def __str__(self):
+        return type(self).__name__
+
+    def possible_on_commit(self, commit):
+        return True
+
+    def get_problems(self, checkable):
+        raise NotImplementedError()
+
+
+class Result(object):
     """Lazy result to be reported to the user"""
     def __init__(self, checkable, check):
         self.checkable = checkable

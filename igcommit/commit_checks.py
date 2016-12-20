@@ -4,12 +4,7 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
-from igcommit.git import Commit
-
-
-class Check():
-    def __str__(self):
-        return type(self).__name__
+from igcommit.git import Check, Commit
 
 
 class CheckDuplicateCommitSummaries(Check):

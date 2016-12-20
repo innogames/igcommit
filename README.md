@@ -17,9 +17,10 @@ Features
 * Validate commit tags against a list `[BUGFIX]`, `[FEATURE]`, `[WIP]`...
 * Check for changed file paths
 * Accept commits tagged as `[WIP]` or `[MESS]` with issues 
-* Check Puppet files `*.pp` with `puppet parser validate` and `puppet-lint`
-* Check Python files `.py` with `flake8`
-* Check JavaScript files `*.js` with `jscs` (requires `.jscs.json` on repository)
+* Check executable bits and shebangs
+* Check Puppet files with `puppet parser validate` and `puppet-lint`
+* Check Python files with `flake8`
+* Check JavaScript files with `jscs` (requires `.jscs.json` on repository)
 
 Here is an example problem output:
 

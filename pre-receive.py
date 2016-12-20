@@ -8,8 +8,7 @@ Copyright (c) 2016, InnoGames GmbH
 """
 
 from igcommit.git import CommitList
-from igcommit import commit_checks
-from igcommit import file_checks
+from igcommit import commit_checks, file_checks
 
 
 commits = CommitList.read_from_input()
@@ -30,6 +29,9 @@ results = commits.get_all_new_commits().get_results(
         commit_checks.CheckChangedFilePaths(),
     ),
     file_checks=(
+        file_checks.CheckExe(),
+        file_checks.CheckShebang(),
+        file_checks.CheckShebangExe(),
         file_checks.CheckCmd(
             (
                 'puppet',
