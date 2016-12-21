@@ -14,7 +14,10 @@ class CommitList(list):
     @classmethod
     def read_from_input(cls):
         """Build a commit list from the standart input"""
-        return cls(Commit(l.split(None, 2)[1]) for l in fileinput.input())
+        commit_list = cls()
+        for line in fileinput.input():
+            commit_list.append(Commit(commit_list, line.split(None, 2)[1]))
+        return commit_list
 
     def __str__(self):
         return '{}..{}'.format(self[0], self[-1])
@@ -24,7 +27,7 @@ class CommitList(list):
         for commit in self:
             commit_list = CommitList()
             for commit_id in commit.get_new_commit_ids():
-                commit_list.append(Commit(commit_id))
+                commit_list.append(Commit(commit_list, commit_id))
             # Appending the actual commit on the list to the new ones makes
             # testing easier.
             if commit not in commit_list:

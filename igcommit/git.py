@@ -10,7 +10,8 @@ class Commit(object):
     """Routines on a single commit"""
     null_commit_id = '0000000000000000000000000000000000000000'
 
-    def __init__(self, commit_id):
+    def __init__(self, commit_list, commit_id):
+        self.commit_list = commit_list
         self.commit_id = commit_id
         self.message = None
         self.changed_files = None

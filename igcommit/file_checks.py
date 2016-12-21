@@ -138,8 +138,8 @@ class CheckCmdWithConfig(CheckCmd):
         super(CheckCmdWithConfig, self).__init__(args, **kwargs)
         self.config_file = CommittedFile(None, config_name)
 
-    def possible(self, commit):
-        if not super(CheckCmdWithConfig, self).possible(commit):
+    def possible_on_commit(self, commit):
+        if not super(CheckCmdWithConfig, self).possible_on_commit(commit):
             return False
 
         prev_commit = self.config_file.commit
@@ -149,8 +149,9 @@ class CheckCmdWithConfig(CheckCmd):
             return False
 
         # If the file is not changed on this commit, we can skip downloading.
-        if prev_commit and not self.config_file.changed():
-            return True
+        if prev_commit and prev_commit.commit_list == commit.commit_list:
+            if not self.config_file.changed():
+                return True
 
         self.config_file.write()
         return True
