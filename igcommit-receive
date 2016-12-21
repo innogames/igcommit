@@ -7,8 +7,8 @@ on the server side.
 Copyright (c) 2016, InnoGames GmbH
 """
 
-from igcommit.git import CommitList
 from igcommit import commit_checks, file_checks
+from igcommit.commit_list import CommitList
 
 
 commits = CommitList.read_from_input()

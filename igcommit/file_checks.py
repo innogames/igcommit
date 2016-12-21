@@ -7,7 +7,8 @@ import re
 from os import environ, access, X_OK
 from subprocess import Popen, PIPE, STDOUT
 
-from igcommit.git import Check, CommittedFile
+from igcommit.commit_list import Check
+from igcommit.git import CommittedFile
 
 file_extensions = {
     'pp': re.compile('^puppet'),

@@ -3,7 +3,8 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
-from igcommit.git import Check, Commit
+from igcommit.commit_list import Check
+from igcommit.git import Commit
 
 
 class CheckDuplicateCommitSummaries(Check):
