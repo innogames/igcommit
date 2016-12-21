@@ -12,8 +12,9 @@ from igcommit.git import Check, CommittedFile
 file_extensions = {
     'pp': re.compile('^puppet'),
     'py': re.compile('^python'),
-    'js': re.compile('js$'),
+    'rb': re.compile('^ruby'),
     'sh': re.compile('sh$'),
+    'js': re.compile('js$'),
 }
 
 

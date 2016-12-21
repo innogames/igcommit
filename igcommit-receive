@@ -57,6 +57,10 @@ results = commits.get_all_new_commits().get_results(
             extension='py',
         ),
         file_checks.CheckCmd(
+            ('rubocop', '--format=emacs', '--stdin', '/dev/stdin'),
+            extension='rb',
+        ),
+        file_checks.CheckCmd(
             ('shellcheck', '--format=gcc', '/dev/stdin'),
             extension='sh',
         ),
