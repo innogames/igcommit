@@ -12,12 +12,10 @@ from igcommit import commit_checks, file_checks
 
 
 commits = CommitList.read_from_input()
-if not any(commits):
-    raise SystemExit()
 if not all(commits):
     raise SystemExit('New commits with deletes')
 
-results = commits.get_all_new_commits().get_results(
+results = commits.get_all_new_commit_results(
     commit_list_checks=(
         commit_checks.CheckDuplicateCommitSummaries(),
     ),

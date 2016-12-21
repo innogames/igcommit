@@ -14,40 +14,26 @@ class CommitList(list):
     """Routines on list of commits"""
 
     @classmethod
-    def build(cls, commit_ids):
-        return cls(Commit(c) for c in commit_ids)
-
-    @classmethod
     def read_from_input(cls):
         """Build a commit list from the standart input"""
-        return cls.build(l.split(None, 2)[1] for l in fileinput.input())
+        return cls(Commit(l.split(None, 2)[1]) for l in fileinput.input())
 
     def __str__(self):
         return '{}..{}'.format(self[0], self[-1])
 
-    def get_new_commits(self):
-        """Get the list of parent new commits in order"""
-        cmd = (
-            'git rev-list {} --not --all --reverse'
-            .format(' '.join(c.commit_id for c in self))
-        )
-        output = check_output(cmd, shell=True).decode()
-        return CommitList.build(reversed(output.splitlines()))
-
-    def get_all_new_commits(self):
-        """Get the list of new commits with the current ones
-
-        Appending the actual commits on the list to the new ones makes testing
-        easier.
-        """
-        all_new_commits = self.get_new_commits()
+    def get_all_new_commit_results(self, *args, **kwargs):
+        """Yield results for new commit lists accessible from """
         for commit in self:
-            if commit not in all_new_commits:
-                all_new_commits.append(commit)
-        return all_new_commits
+            commit_list = commit.get_new_commits()
+            # Appending the actual commit on the list to the new ones makes
+            # testing easier.
+            if commit not in commit_list:
+                commit_list.append(commit)
+            for result in commit_list.get_results(*args, **kwargs):
+                yield result
 
     def get_results(self, commit_list_checks, commit_checks, file_checks):
-        """Check everything of the commit list"""
+        """Yield results for everything of the commit list"""
         for check in commit_list_checks:
             yield Result(self, check)
 
@@ -98,6 +84,14 @@ class Commit(object):
 
     def __eq__(self, other):
         return isinstance(other, Commit) and self.commit_id == other.commit_id
+
+    def get_new_commits(self):
+        """Get the list of parent new commits in order"""
+        cmd = 'git rev-list {} --not --all --reverse'.format(self.commit_id)
+        commit_list = CommitList()
+        for line in check_output(cmd, shell=True).decode().splitlines():
+            commit_list.append(Commit(line))
+        return commit_list
 
     def get_message(self):
         if self.message is None:
