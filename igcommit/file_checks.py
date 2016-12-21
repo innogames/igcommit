@@ -4,11 +4,11 @@ Copyright (c) 2016, InnoGames GmbH
 """
 
 import re
-from os import environ, access, X_OK
 from subprocess import Popen, PIPE, STDOUT
 
 from igcommit.commit_list import Check
 from igcommit.git import CommittedFile
+from igcommit.utils import get_exe_path
 
 file_extensions = {
     'pp': re.compile('^puppet'),
@@ -91,20 +91,15 @@ class CheckCmd(Check):
     def __init__(self, args, extension=None):
         assert args
         self.args = args
+        self.exe_path = get_exe_path(args[0])
         self.extension = extension
         self.pattern = file_extensions.get(extension)
 
     def __str__(self):
         return '{} "{}"'.format(type(self).__name__, self.args[0])
 
-    def get_exe_path(self):
-        for dir_path in environ['PATH'].split(':'):
-            path = dir_path.strip('"') + '/' + self.args[0]
-            if access(path, X_OK):
-                return path
-
     def possible_on_commit(self, commit):
-        return bool(self.get_exe_path())
+        return bool(self.exe_path)
 
     def possible_on_file(self, committed_file):
         if not self.extension:
@@ -122,7 +117,7 @@ class CheckCmd(Check):
         return False
 
     def get_problems(self, committed_file):
-        args = (self.get_exe_path(), ) + self.args[1:]
+        args = (self.exe_path, ) + self.args[1:]
         process = Popen(args, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
         content = committed_file.get_content()
         output = process.communicate(content)[0].decode()

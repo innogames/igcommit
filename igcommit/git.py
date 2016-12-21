@@ -5,6 +5,10 @@ Copyright (c) 2016, InnoGames GmbH
 
 from subprocess import check_output
 
+from igcommit.utils import get_exe_path
+
+git_exe_path = get_exe_path('git')
+
 
 class Commit(object):
     """Routines on a single commit"""
@@ -30,14 +34,24 @@ class Commit(object):
 
     def get_new_commit_ids(self):
         """Get the list of parent new commits in order"""
-        cmd = 'git rev-list {} --not --all --reverse'.format(self.commit_id)
-        return check_output(cmd, shell=True).decode().splitlines()
+        return check_output((
+            git_exe_path,
+            'rev-list',
+            self.commit_id,
+            '--not',
+            '--all',
+            '--reverse',
+        )).decode().splitlines()
 
     def get_message(self):
         if self.message is None:
-            cmd = 'git log --format=%B -n 1 {}'.format(self.commit_id)
-            output = check_output(cmd, shell=True).decode()
-            self.message = output.strip()
+            self.message = check_output((
+                git_exe_path,
+                'log',
+                '--format=%B',
+                '--max-count=1',
+                self.commit_id,
+            )).decode()
         return self.message
 
     def get_summary(self):
@@ -59,13 +73,18 @@ class Commit(object):
     def get_changed_files(self):
         """Return the list of added or modified files on a commit"""
         if self.changed_files is None:
-            cmd = (
-                'git diff-tree -r --no-commit-id --break-rewrites '
-                '--no-renames --diff-filter=AM {}'
-                .format(self.commit_id)
-            )
+            output = check_output((
+                git_exe_path,
+                'diff-tree',
+                '-r',
+                '--no-commit-id',
+                '--break-rewrites',     # Get rewrites as additions
+                '--no-renames',         # Get rewrites as additions
+                '--diff-filter=AM',     # Only additions and modifications
+                self.commit_id,
+            )).decode()
             changed_files = []
-            for line in check_output(cmd, shell=True).decode().splitlines():
+            for line in output.splitlines():
                 line_split = line.split()
                 assert len(line_split) == 6
                 assert line_split[0].startswith(':')
@@ -96,11 +115,14 @@ class CommittedFile(object):
         )
 
     def exists(self):
-        cmd = (
-            'git ls-tree --name-only -r {} {}'
-            .format(self.commit.commit_id, self.path)
-        )
-        return bool(check_output(cmd, shell=True))
+        return bool(check_output((
+            git_exe_path,
+            'ls-tree',
+            '--name-only',
+            '-r',
+            self.commit.commit_id,
+            self.path,
+        )))
 
     def changed(self):
         return self in self.commit.get_changed_files()
@@ -116,8 +138,11 @@ class CommittedFile(object):
 
     def get_content(self):
         """Return the content of a file on a commit as bytes"""
-        cmd = 'git show {}:{}'.format(self.commit.commit_id, self.path)
-        return check_output(cmd, shell=True)
+        return check_output((
+            git_exe_path,
+            'show',
+            self.commit.commit_id + ':' + self.path,
+        ))
 
     def get_shebang(self):
         if self.shebang is None:
