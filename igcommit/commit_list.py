@@ -22,7 +22,7 @@ class CommitList(list):
     def __str__(self):
         return '{}..{}'.format(self[0], self[-1])
 
-    def get_all_new_commit_results(self, *args, **kwargs):
+    def expand_checks_all(self, checks):
         """Yield results for new commit lists accessible from """
         for commit in self:
             commit_list = CommitList()
@@ -32,39 +32,40 @@ class CommitList(list):
             # testing easier.
             if commit not in commit_list:
                 commit_list.append(commit)
-            for result in commit_list.get_results(*args, **kwargs):
+            for result in commit_list.expand_checks(checks):
                 yield result
 
-    def get_results(self, commit_list_checks, commit_checks, file_checks):
-        """Yield results for everything of the commit list"""
-        for check in commit_list_checks:
-            yield Result(self, check)
+    def expand_checks(self, checks):
+        """Expand the checks to the list, the commits and the files
 
-        failed_paths = []
+        It yields the checks prepared and ready.
+        """
+        checks_for_commits = []
+        for check in checks:
+            check_prepared = check.for_commit_list(self)
+            if check_prepared:
+                if check_prepared.ready:
+                    yield check_prepared
+                else:
+                    checks_for_commits.append(check_prepared)
+
         for commit in self:
-            for check in commit_checks:
-                yield Result(commit, check)
+            checks_for_files = []
+            for check in checks_for_commits:
+                check_prepared = check.for_commit(commit)
+                if check_prepared:
+                    if check_prepared.ready:
+                        yield check_prepared
+                    else:
+                        checks_for_files.append(check_prepared)
 
-            checks = [c for c in file_checks if c.possible_on_commit(commit)]
             for changed_file in commit.get_changed_files():
-                # We are not bothering to check the files on the following
-                # commits again, if the check already failed on them.
-                if changed_file.path in failed_paths:
-                    continue
-
-                for check in checks:
-                    if not check.possible_on_file(changed_file):
-                        continue
-
-                    result = Result(changed_file, check)
-                    yield result
-
-                    if result.failed():
-                        failed_paths.append(changed_file.path)
-
-                        # It probably doesn't make sense to run the following
-                        # checks on this file as the previous one failed.
-                        break
+                for check in checks_for_files:
+                    check_prepared = check.for_committed_file(changed_file)
+                    if check_prepared:
+                        # No more objects to expand
+                        assert check_prepared.ready
+                        yield check_prepared
 
 
 class Check(object):

@@ -3,7 +3,7 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
-from subprocess import check_output
+from subprocess import check_output, CalledProcessError, Popen, PIPE
 
 from igcommit.utils import get_exe_path
 
@@ -67,7 +67,7 @@ class Commit(object):
             rest = rest[end_index + 1:]
         return tags, rest
 
-    def can_soft_fail(self):
+    def content_can_fail(self):
         return any(t in ('MESS', 'WIP') for t in self.parse_tags()[0])
 
     def get_changed_files(self):
@@ -102,7 +102,8 @@ class CommittedFile(object):
         self.commit = commit
         self.path = path
         self.mode = mode
-        self.shebang = None
+        self.exe = None
+        self.content_proc = None
 
     def __str__(self):
         return '{} at {}'.format(self.path, self.commit)
@@ -136,33 +137,41 @@ class CommittedFile(object):
         if '.' in self.path:
             return self.path.rsplit('.', 1)[1]
 
-    def get_content(self):
+    def get_content_proc(self, stdout=PIPE):
         """Return the content of a file on a commit as bytes"""
-        return check_output((
-            git_exe_path,
-            'show',
-            self.commit.commit_id + ':' + self.path,
-        ))
+        if self.content_proc is None:
+            self.content_proc = Popen((
+                git_exe_path,
+                'show',
+                self.commit.commit_id + ':' + self.path,
+            ), stdout=stdout)
+        return self.content_proc
+
+    def release_content_proc(self):
+        assert self.content_proc is not None
+        # At this point, we know that the process is no longer needed.  All
+        # of its output is most likely consumed by the caller.  Therefore,
+        # it is the good time to check its return code.
+        self.content_proc.poll()
+        assert self.content_proc.returncode is not None
+        if self.content_proc.returncode != 0:
+            raise CalledProcessError(
+                'Git command returned non-zero exit status {}'
+                .format(self.content_proc.returncode)
+            )
+        self.content_proc = None
 
     def get_shebang(self):
-        if self.shebang is None:
-            for line in self.get_content().splitlines():
-                if line.startswith(b'#!'):
-                    self.shebang = line[len('#!'):].decode()
-                else:
-                    self.shebang = ''
-                break
-        return self.shebang
-
-    def get_shebang_exe(self):
-        shebang = self.get_shebang()
-        if not shebang:
-            return None
-        shebang_split = shebang.split(None, 2)
-        if shebang_split[0] == '/usr/bin/env' and len(shebang_split) > 1:
-            return shebang_split[1]
-        return shebang_split[0]
+        assert self.content_proc is None
+        line = self.get_content_proc().stdout.readline()
+        if line.startswith(b'#!'):
+            return line[len('#!'):].decode()
+        # We assume no one else will need the shebang on the file.  Therefore
+        # if this we found it, the next caller can still use this process
+        # to get the file content.  If we hit something else, we must release
+        # the process for the next caller to get fresh content.
+        self.release_content_proc()
 
     def write(self):
         with open(self.path, 'wb') as fd:
-            fd.write(self.get_content())
+            self.get_content_proc(fd).wait()

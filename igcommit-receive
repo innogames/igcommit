@@ -15,67 +15,58 @@ commits = CommitList.read_from_input()
 if not all(commits):
     raise SystemExit('New commits with deletes')
 
-results = commits.get_all_new_commit_results(
-    commit_list_checks=(
-        commit_checks.CheckDuplicateCommitSummaries(),
+checks = commits.expand_checks_all((
+    commit_checks.CheckDuplicateCommitSummaries(),
+    commit_checks.CheckMisleadingMergeCommit(),
+    commit_checks.CheckCommitMessage(),
+    commit_checks.CheckCommitSummary(),
+    commit_checks.CheckCommitTags(),
+    commit_checks.CheckChangedFilePaths(),
+    file_checks.CheckExecutable(),
+    file_checks.CheckCommand(
+        (
+            'puppet',
+            'parser',
+            'validate',
+            '--color=false',
+            '--confdir=/tmp',
+            '--vardir=/tmp',
+        ),
+        extension='pp',
     ),
-    commit_checks=(
-        commit_checks.CheckMisleadingMergeCommit(),
-        commit_checks.CheckCommitMessage(),
-        commit_checks.CheckCommitSummary(),
-        commit_checks.CheckCommitTags(),
-        commit_checks.CheckChangedFilePaths(),
+    file_checks.CheckCommand(
+        (
+            'puppet-lint',
+            '--fail-on-warnings',
+            '--no-autoloader_layout-check',
+            '/dev/stdin',
+        ),
+        extension='pp',
     ),
-    file_checks=(
-        file_checks.CheckExe(),
-        file_checks.CheckShebang(),
-        file_checks.CheckShebangExe(),
-        file_checks.CheckCmd(
-            (
-                'puppet',
-                'parser',
-                'validate',
-                '--color=false',
-                '--confdir=/tmp',
-                '--vardir=/tmp',
-            ),
-            extension='pp',
-        ),
-        file_checks.CheckCmd(
-            (
-                'puppet-lint',
-                '--fail-on-warnings',
-                '--no-autoloader_layout-check',
-                '/dev/stdin',
-            ),
-            extension='pp',
-        ),
-        file_checks.CheckCmd(
-            ('flake8', '/dev/stdin'),
-            extension='py',
-        ),
-        file_checks.CheckCmd(
-            ('rubocop', '--format=emacs', '--stdin', '/dev/stdin'),
-            extension='rb',
-        ),
-        file_checks.CheckCmd(
-            ('shellcheck', '--format=gcc', '/dev/stdin'),
-            extension='sh',
-        ),
-        file_checks.CheckCmdWithConfig(
-            ('jscs', '--max-errors=-1', '--reporter=unix', '/dev/stdin'),
-            extension='js',
-            config_name='.jscs.json',
-        ),
+    file_checks.CheckCommand(
+        ('flake8', '/dev/stdin'),
+        extension='py',
     ),
-)
+    file_checks.CheckCommand(
+        ('rubocop', '--format=emacs', '--stdin', '/dev/stdin'),
+        extension='rb',
+    ),
+    file_checks.CheckCommand(
+        ('shellcheck', '--format=gcc', '/dev/stdin'),
+        extension='sh',
+    ),
+    file_checks.CheckCommandWithConfig(
+        ('jscs', '--max-errors=-1', '--reporter=unix', '/dev/stdin'),
+        extension='js',
+        config_name='.jscs.json',
+    ),
+))
 
 failed = False
-for result in results:
-    if result.failed():
-        result.print_section()
-        if not result.can_soft_fail():
-            failed = True
+for check in checks:
+    check.print_problems()
+    if check.failed:
+        failed = True
 
 if failed:
     raise SystemExit('Checks failed')
