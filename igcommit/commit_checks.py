@@ -37,6 +37,9 @@ class CheckDuplicateCommitSummaries(BaseCheck):
 class CommitCheck(BaseCheck):
     commit = None
 
+    def for_commit_list(self, commit_list):
+        return self
+
     def for_commit(self, commit):
         new = type(self)()
         new.commit = commit

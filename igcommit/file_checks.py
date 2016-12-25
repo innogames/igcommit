@@ -19,23 +19,28 @@ file_extensions = {
 }
 
 
-class CheckCommmittedFile(BaseCheck):
+class CommmittedFileCheck(BaseCheck):
+    committed_file = None
+
     def for_commit_list(self, commit_list):
         return self
 
     def for_commit(self, commit):
         return self
 
+    def for_committed_file(self, committed_file):
+        new = type(self)()
+        new.committed_file = committed_file
+        new.ready = True
+        return new
 
-class CheckExecutable(CheckCommmittedFile):
-    committed_file = None
 
+class CheckExecutable(CommmittedFileCheck):
     def for_committed_file(self, committed_file):
         if committed_file.owner_can_execute():
-            new = CheckExecutable()
-            new.committed_file = committed_file
-            new.ready = True
-            return new
+            return super(CheckExecutable, self).for_committed_file(
+                committed_file
+            )
 
     def get_problems(self):
         extension = self.committed_file.get_extension()
@@ -89,13 +94,11 @@ class CheckExecutable(CheckCommmittedFile):
         return '{} on {}'.format(type(self).__name__, self.committed_file)
 
 
-class CheckCommand(CheckCommmittedFile):
+class CheckCommand(CommmittedFileCheck):
     """Check command to be executed on file contents"""
     exe_path = None
-    committed_file = None
 
-    def __init__(self, args, extension=None):
-        assert args
+    def __init__(self, args=None, extension=None):
         self.args = args
         self.extension = extension
 
@@ -111,11 +114,10 @@ class CheckCommand(CheckCommmittedFile):
     def for_committed_file(self, committed_file):
         if not self.possible_for_committed_file(committed_file):
             return None
-        new = CheckCommand(self.args, self.extension)
-        if self.exe_path:
-            new.exe_path = self.exe_path
-        new.committed_file = committed_file
-        new.ready = True
+        new = super(CheckCommand, self).for_committed_file(committed_file)
+        new.args = self.args
+        new.extension = self.extension
+        new.exe_path = self.get_exe_path()
         new.content_proc = committed_file.get_content_proc()
         new.check_proc = Popen(
             (self.get_exe_path(), ) + self.args[1:],
