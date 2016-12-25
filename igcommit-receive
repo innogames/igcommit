@@ -9,13 +9,15 @@ Copyright (c) 2016, InnoGames GmbH
 
 from igcommit import commit_checks, file_checks
 from igcommit.commit_list import CommitList
+from igcommit.utils import iter_buffer
 
 
 commits = CommitList.read_from_input()
 if not all(commits):
     raise SystemExit('New commits with deletes')
 
-checks = commits.expand_checks_all((
+failed = False
+for check in iter_buffer(commits.expand_checks_all((
     commit_checks.CheckDuplicateCommitSummaries(),
     commit_checks.CheckMisleadingMergeCommit(),
     commit_checks.CheckCommitMessage(),
@@ -60,13 +62,9 @@ checks = commits.expand_checks_all((
         extension='js',
         config_name='.jscs.json',
     ),
-))
-
-failed = False
-for check in checks:
+))):
     check.print_problems()
-    if check.failed:
-        failed = True
+    failed |= check.failed
 
 if failed:
     raise SystemExit('Checks failed')

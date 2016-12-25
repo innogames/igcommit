@@ -23,6 +23,7 @@ Features
 * Check Ruby files with `rubocop`
 * Check shell scripts with `shellcheck`
 * Check JavaScript files with `jscs` (requires `.jscs.json` on repository)
+* Run the external check commands in parallel
 
 Here is an example problem output:
 
@@ -37,7 +38,7 @@ Here is an example problem output:
 === CheckCommitSummary on 6bded65 ===
 * past tense used on summary
 
-=== CheckCmd "flake8" on src/check_multiple.py at 6bded65 ===
+=== CheckCommand "flake8" on src/check_multiple.py at 6bded65 ===
 * line 7:80: E501 line too long (140 > 79 characters)
 * line 8:80: E501 line too long (201 > 79 characters)
 * line 9:80: E501 line too long (106 > 79 characters)

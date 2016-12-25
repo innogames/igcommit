@@ -103,7 +103,7 @@ class CommittedFile(object):
         self.path = path
         self.mode = mode
         self.exe = None
-        self.content_proc = None
+        self.not_consumed_content_proc = None
 
     def __str__(self):
         return '{} at {}'.format(self.path, self.commit)
@@ -139,39 +139,37 @@ class CommittedFile(object):
 
     def get_content_proc(self, stdout=PIPE):
         """Return the content of a file on a commit as bytes"""
-        if self.content_proc is None:
-            self.content_proc = Popen((
-                git_exe_path,
-                'show',
-                self.commit.commit_id + ':' + self.path,
-            ), stdout=stdout)
-        return self.content_proc
+        if self.not_consumed_content_proc is not None:
+            proc = self.not_consumed_content_proc
+            self.not_consumed_content_proc = None
+            return proc
 
-    def release_content_proc(self):
-        assert self.content_proc is not None
-        # At this point, we know that the process is no longer needed.  All
-        # of its output is most likely consumed by the caller.  Therefore,
-        # it is the good time to check its return code.
-        self.content_proc.poll()
-        assert self.content_proc.returncode is not None
-        if self.content_proc.returncode != 0:
-            raise CalledProcessError(
-                'Git command returned non-zero exit status {}'
-                .format(self.content_proc.returncode)
-            )
-        self.content_proc = None
+        return Popen((
+            git_exe_path,
+            'show',
+            self.commit.commit_id + ':' + self.path,
+        ), stdout=stdout)
 
     def get_shebang(self):
-        assert self.content_proc is None
-        line = self.get_content_proc().stdout.readline()
+        assert self.not_consumed_content_proc is None
+        proc = self.get_content_proc()
+        line = proc.stdout.readline()
         if line.startswith(b'#!'):
+            self.not_consumed_content_proc = proc
             return line[len('#!'):].decode()
-        # We assume no one else will need the shebang on the file.  Therefore
-        # if this we found it, the next caller can still use this process
-        # to get the file content.  If we hit something else, we must release
-        # the process for the next caller to get fresh content.
-        self.release_content_proc()
+
+        if proc.poll() not in (None, 0):
+            raise CalledProcessError(
+                'Git command returned non-zero exit status {}'
+                .format(proc.returncode)
+            )
 
     def write(self):
         with open(self.path, 'wb') as fd:
-            self.get_content_proc(fd).wait()
+            proc = self.get_content_proc(fd)
+
+        if proc.wait() != 0:
+            raise CalledProcessError(
+                'Git command returned non-zero exit status {}'
+                .format(proc.returncode)
+            )

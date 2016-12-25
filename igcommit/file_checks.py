@@ -4,7 +4,7 @@ Copyright (c) 2016, InnoGames GmbH
 """
 
 import re
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import CalledProcessError, Popen, PIPE, STDOUT
 
 from igcommit.base_check import BaseCheck
 from igcommit.git import CommittedFile
@@ -116,6 +116,14 @@ class CheckCommand(CheckCommmittedFile):
             new.exe_path = self.exe_path
         new.committed_file = committed_file
         new.ready = True
+        new.content_proc = committed_file.get_content_proc()
+        new.check_proc = Popen(
+            (self.get_exe_path(), ) + self.args[1:],
+            stdin=new.content_proc.stdout,
+            stdout=PIPE,
+            stderr=STDOUT,
+        )
+        new.content_proc.stdout.close()   # Allow it to receive a SIGPIPE
         return new
 
     def possible_for_committed_file(self, committed_file):
@@ -129,23 +137,19 @@ class CheckCommand(CheckCommmittedFile):
         )
 
     def get_problems(self):
-        args = (self.get_exe_path(), ) + self.args[1:]
-        stdin = self.committed_file.get_content_proc().stdout
-        proc = Popen(args, stdin=stdin, stdout=PIPE, stderr=STDOUT)
-        stdin.close()   # Allow first process to receive a SIGPIPE
-
-        for line in proc.stdout:
+        for line in self.check_proc.stdout:
             line = line.strip().decode()
             if line.startswith('/dev/stdin:'):
                 line = 'line ' + line[len('/dev/stdin:'):]
             yield line
 
-        self.committed_file.release_content_proc()
-        proc.poll()
-        # The process must have been finished, after the output is consumed.
-        assert proc.returncode is not None
+        if self.content_proc.poll() != 0:
+            raise CalledProcessError(
+                'Git command returned non-zero exit status {}'
+                .format(self.content_proc.returncode)
+            )
         if (
-            proc.returncode != 0 and
+            self.check_proc.wait() != 0 and
             not self.committed_file.commit.content_can_fail()
         ):
             self.failed = True
