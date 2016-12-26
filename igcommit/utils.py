@@ -13,11 +13,12 @@ def get_exe_path(exe):
             return path
 
 
-def iter_buffer(iterable, amount=32):
+def iter_buffer(iterable, amount):
+    assert amount > 1
     memo = []
     for elem in iterable:
-        memo.append(elem)
         if len(memo) >= amount:
             yield memo.pop(0)
+        memo.append(elem)
     for elem in memo:
         yield elem

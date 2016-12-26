@@ -11,13 +11,7 @@ from igcommit import commit_checks, file_checks
 from igcommit.commit_list import CommitList
 from igcommit.utils import iter_buffer
 
-
-commits = CommitList.read_from_input()
-if not all(commits):
-    raise SystemExit('New commits with deletes')
-
-failed = False
-for check in iter_buffer(commits.expand_checks_all((
+checks = [
     commit_checks.CheckDuplicateCommitSummaries(),
     commit_checks.CheckMisleadingMergeCommit(),
     commit_checks.CheckCommitMessage(),
@@ -62,7 +56,21 @@ for check in iter_buffer(commits.expand_checks_all((
         extension='js',
         config_name='.jscs.json',
     ),
-))):
+]
+commits = CommitList.read_from_input()
+failed = False
+
+# Deletes appear as NULL commits.  We accept them only when there are only
+# deletes.  When they are mixed with actual new commits, it is impossible
+# to detect the full list of new commits.
+if not all(commits):
+    raise SystemExit('New commits with deletes')
+
+# We are buffering the checks to let them run parallel in the background.
+# Parallelization only applies to the CheckCommands.  It has no overhead,
+# because we have to run those commands the same way externally, anyway.
+# We only have a limit in there to avoid hitting OS's process limit.
+for check in iter_buffer(commits.expand_checks_all(checks), 32):
     check.print_problems()
     failed |= check.failed
 

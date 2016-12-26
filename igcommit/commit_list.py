@@ -5,7 +5,7 @@ Copyright (c) 2016, InnoGames GmbH
 
 import fileinput
 
-from igcommit.git import Commit, CommittedFile
+from igcommit.git import Commit
 
 
 class CommitList(list):
@@ -66,48 +66,3 @@ class CommitList(list):
                         # No more objects to expand
                         assert check_prepared.ready
                         yield check_prepared
-
-
-class Check(object):
-    def __str__(self):
-        return type(self).__name__
-
-    def possible_on_commit(self, commit):
-        return True
-
-    def get_problems(self, checkable):
-        raise NotImplementedError()
-
-
-class Result(object):
-    """Lazy result to be reported to the user"""
-    def __init__(self, checkable, check):
-        self.checkable = checkable
-        self.check = check
-        self.problems = check.get_problems(checkable)
-        # We have to buffer the first problem to see if there are any.
-        self.first_problem = None
-
-    def failed(self):
-        if self.first_problem:
-            return True
-        for problem in self.problems:
-            # Problem cannot be empty.
-            assert problem
-            self.first_problem = problem
-            return True
-        return False
-
-    def can_soft_fail(self):
-        return (
-            isinstance(self.checkable, CommittedFile) and
-            self.checkable.commit.can_soft_fail()
-        )
-
-    def print_section(self):
-        print('=== {} on {} ==='.format(self.check, self.checkable))
-        if self.first_problem:
-            print('* ' + self.first_problem)
-        for problem in self.problems:
-            print('* ' + problem)
-        print('')

@@ -151,6 +151,13 @@ class CommittedFile(object):
         ), stdout=stdout)
 
     def get_shebang(self):
+        """Get the shebang from the file content
+
+        The shebang is always on the first line.  It is not really part of
+        the file, so we are trying to get it from the buffer that is going
+        to be used later on checking the file content.  This is an optimistic
+        approach that only works, if the first line is actually the shebang.
+        """
         assert self.not_consumed_content_proc is None
         proc = self.get_content_proc()
         line = proc.stdout.readline()

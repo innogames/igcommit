@@ -20,6 +20,12 @@ file_extensions = {
 
 
 class CommmittedFileCheck(BaseCheck):
+    """Parent class for checks on a single committed file
+
+    To check the files, we have to skip for_commit_list(), for_commit(),
+    and clone ourself on for_committed_file().  The subclasses has additional
+    logic on those to filter out themselves for some cases.
+    """
     committed_file = None
 
     def for_commit_list(self, commit_list):
@@ -36,6 +42,14 @@ class CommmittedFileCheck(BaseCheck):
 
 
 class CheckExecutable(CommmittedFileCheck):
+    """Special checks for executable files
+
+    Git stores executable bits of the files.  We are running these checks only
+    on the files executable bit is set.  It would have been nice to check
+    the files which don't have this bit set, but has a shebang, at least
+    to warn about it, as it is very common to omit executable bit on Git.
+    However, it would be expensive to look at the content of every file.
+    """
     def for_committed_file(self, committed_file):
         if committed_file.owner_can_execute():
             return super(CheckExecutable, self).for_committed_file(
@@ -163,6 +177,15 @@ class CheckCommand(CommmittedFileCheck):
 
 
 class CheckCommandWithConfig(CheckCommand):
+    """CheckCommand which requires a configuration file
+
+    We have to download the configuration file to the current workspace
+    to let the command find it.  It is not really safe to do that.
+    The workspace might not be a good place to write things.  Also, it is
+    not safe to update this file, when it is changed on different commits,
+    because we run the commands in parallel.  We are ignoring those problems,
+    until they start happening on production.
+    """
     def __init__(self, args, config_name, **kwargs):
         super(CheckCommandWithConfig, self).__init__(args, **kwargs)
         self.config_file = CommittedFile(None, config_name)

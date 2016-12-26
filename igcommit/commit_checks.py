@@ -8,6 +8,12 @@ from igcommit.git import Commit
 
 
 class CheckDuplicateCommitSummaries(BaseCheck):
+    """Check repeated commit summaries on a single commit list
+
+    We are not exact matching the commit summaries, but searching summaries
+    on the beginning of other ones.  This covers summaries like "Fix the bug"
+    and "Fix the bug really" which is common bad practice for some reason.
+    """
     commit_list = None
 
     def for_commit_list(self, commit_list):
@@ -35,6 +41,7 @@ class CheckDuplicateCommitSummaries(BaseCheck):
 
 
 class CommitCheck(BaseCheck):
+    """Parent class for all single commit checks"""
     commit = None
 
     def for_commit_list(self, commit_list):
@@ -120,6 +127,7 @@ class CheckCommitSummary(CommitCheck):
 
 
 class CheckCommitTags(CommitCheck):
+    """Check the tags on the commit summaries"""
     tags = {
         'BUGFIX',
         'CLEANUP',
@@ -151,6 +159,7 @@ class CheckCommitTags(CommitCheck):
 
 
 class CheckChangedFilePaths(CommitCheck):
+    """Check file names and directories on a single commit"""
     def get_problems(self):
         for changed_file in self.commit.get_changed_files():
             extension = changed_file.get_extension()

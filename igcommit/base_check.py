@@ -5,6 +5,12 @@ Copyright (c) 2016, InnoGames GmbH
 
 
 class BaseCheck(object):
+    """The parent class of all checks
+
+    Checks are expanded to different objects by cloning.  The subclasses
+    has to extend for_commit_list(), for_commit(), and/or for_committed_file()
+    methods to clone the check.
+    """
     ready = False
     failed = False
 
