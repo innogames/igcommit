@@ -24,16 +24,22 @@ class CommitList(list):
 
     def expand_checks_all(self, checks):
         """Yield results for new commit lists accessible from """
+        used_commit_ids = {}
         for commit in self:
             if not commit:
                 continue
+
             commit_list = CommitList()
             for commit_id in commit.get_new_commit_ids():
-                commit_list.append(Commit(commit_list, commit_id))
+                if commit_id not in used_commit_ids:
+                    commit_list.append(Commit(commit_list, commit_id))
+                    used_commit_ids.add(commit_id)
+
             # Appending the actual commit on the list to the new ones makes
             # testing easier.
             if commit not in commit_list:
                 commit_list.append(commit)
+
             for result in commit_list.expand_checks(checks):
                 yield result
 
