@@ -25,6 +25,8 @@ class CommitList(list):
     def expand_checks_all(self, checks):
         """Yield results for new commit lists accessible from """
         for commit in self:
+            if not commit:
+                continue
             commit_list = CommitList()
             for commit_id in commit.get_new_commit_ids():
                 commit_list.append(Commit(commit_list, commit_id))
