@@ -1,8 +1,15 @@
 InnoGames Commit Validation Script
 ==================================
 
-The repository provides a Git pre-receive hook to validate pushed commits on
-the server side.
+The developers tend to be obsessed about code style.  It is exhausting to edit
+files again and again to have a consistent style.  This project provides
+a Git pre-receive hook to validate pushed commits on the Git server side.
+The hook avoids all issues by rejecting any commit with inconsistent style
+to get in to the repository in the first place.
+
+The pre-receive hook is pretty fast because it checks only the changed files
+on the pushed commits in parallel.  It wouldn't slow you down unless your
+commits are touching hundreds of files.
 
 Features
 --------
@@ -16,7 +23,7 @@ Features
 * Check commit summary formatting
 * Validate commit tags against a list `[BUGFIX]`, `[FEATURE]`, `[WIP]`...
 * Check for changed file paths
-* Accept commits tagged as `[WIP]` or `[MESS]` with issues 
+* Accept commits tagged as `[WIP]` or `[MESS]` with issues
 * Check executable bits and shebangs
 * Check Puppet files with `puppet parser validate` and `puppet-lint`
 * Check Python files with `flake8`
@@ -51,6 +58,35 @@ Here is an example problem output:
 * line 9 is longer than 80
 ```
 
+Pros and Cons of Pre-receive Hook
+--------------------------------
+
+### Continuous Integration Server
+
+A continuous integration server can run such checks with the many other things
+it is doing.  Moving this job from it has many benefits:
+
+* Synchronous feedback
+* More efficient
+* Disallow any commit violating the rules
+
+### Pre-commit Hook
+
+Even though, pre-receive hook gives later feedback than pre-commit hook, it
+has many advantages over it:
+
+* No client side configuration
+* Plugins has to be installed only once to the Git server
+* Everybody gets the same checks
+* Enforcement, nobody can skip the checks
+* Commit checking (pre-commit hook only gets what is changed in the commit)
+
+### IDE Integration
+
+The same advantages compared to pre-commit hooks applies to IDE integration.
+Though, IDE integration gives much sooner and nicer feedback, so it is
+still a good idea, even with the pre-receive hook.
+
 Dependencies
 ------------
 
@@ -69,44 +105,6 @@ repositories on your Git server:
 ```shell
 ln -s igcommit-receive /home/git/repositories/myproject.git/hooks/pre-receive
 ```
-
-FAQ
----
-
-### Why should I check my commits?
-
-The developers tend to be obsessed about code style.  It is exhausting
-to edit files again and again to have a consistent style.  The pre-receive
-hook avoid these by rejecting any commit with inconsistent style to get
-in to the repository in the first place.
-
-### But our continuous integration server runs the tests
-
-The pre-receive hook is more practical than a continuous integration server
-to run these tests, because it gives immediate feedback.  Besides, it checks
-every commit one by one.  Continuous integration server would check the state
-on the last commit letting intermediate commits with bad style in to
-the repository.  The hook is also more efficient to run these tests, because
-it only checks the changed files.
-
-### But we do code reviews
-
-Those problems can be easily caught by doing code reviews, but it is time
-consuming for the reviewer and the author.  The pre-receive hook reject such
-problems before anyone can even see them, so you can concentrate more
-important details on code reviews.
-
-### But my IDE warns me anyway
-
-The even more efficient way to address that problem is IDE integration, but
-IDEs are not restrictive.  The pre-receive hook would reject you on the server
-side in case something went wrong.
-
-### But it would slow pushing down
-
-The pre-receive hook is pretty fast because it only checks the changed files
-on the pushed commits.  It wouldn't slow you down unless your commits are
-touching hundreds of files.
 
 Testing
 -------
