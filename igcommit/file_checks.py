@@ -88,7 +88,7 @@ class CheckExecutable(CommmittedFileCheck):
         self.committed_file.exe = exe
 
         if extension in file_extensions:
-            if not file_extensions[extension].match(exe):
+            if not file_extensions[extension].search(exe):
                 yield (
                     'shebang executable "{}" doesn\'t match pattern "{}"'
                     .format(exe, file_extensions[extension].pattern)
@@ -96,7 +96,7 @@ class CheckExecutable(CommmittedFileCheck):
                 self.failed = True
         if extension:
             for key, pattern in file_extensions.items():
-                if pattern.match(exe) and key != extension:
+                if pattern.search(exe) and key != extension:
                     yield (
                         'shebang executable {} matches pattern of file '
                         'extension ".{}"'
@@ -148,7 +148,7 @@ class CheckCommand(CommmittedFileCheck):
             committed_file.get_extension() == self.extension or (
                 self.extension in file_extensions and
                 committed_file.exe and
-                file_extensions[self.extension].match(committed_file.exe)
+                file_extensions[self.extension].search(committed_file.exe)
             )
         )
 
