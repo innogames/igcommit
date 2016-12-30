@@ -186,7 +186,7 @@ class CheckCommandWithConfig(CheckCommand):
     because we run the commands in parallel.  We are ignoring those problems,
     until they start happening on production.
     """
-    def __init__(self, args, config_name, **kwargs):
+    def __init__(self, args=None, config_name=None, **kwargs):
         super(CheckCommandWithConfig, self).__init__(args, **kwargs)
         self.config_file = CommittedFile(None, config_name)
 
