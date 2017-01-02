@@ -11,17 +11,31 @@ class BaseCheck(object):
     has to extend for_commit_list(), for_commit(), and/or for_committed_file()
     methods to clone the check.
     """
+    preferred_checks = []
     ready = False
     failed = False
 
+    def __init__(self, preferred_checks=None):
+        if preferred_checks:
+            self.preferred_checks = preferred_checks
+
+    def clone(self):
+        new = type(self)()
+        if self.preferred_checks:
+            new.preferred_checks = self.preferred_checks
+        return new
+
     def for_commit_list(self, commit_list):
-        return None
+        for check in self.preferred_checks:
+            if check.for_commit_list(commit_list):
+                return None
+        return self
 
     def for_commit(self, commit):
-        return None
+        return self
 
     def for_committed_file(self, committed_file):
-        return None
+        return self
 
     def print_problems(self):
         header_printed = False

@@ -17,11 +17,15 @@ class CheckDuplicateCommitSummaries(BaseCheck):
     commit_list = None
 
     def for_commit_list(self, commit_list):
-        if len(commit_list) > 1:
-            new = CheckDuplicateCommitSummaries()
-            new.commit_list = commit_list
-            new.ready = True
-            return new
+        if len(commit_list) <= 1:
+            return None
+        new = self.clone()
+        new.commit_list = commit_list
+        new.ready = True
+        return new
+
+    def for_commit(self, commit):
+        return None
 
     def get_problems(self):
         duplicate_summaries = [()]  # Nothing starts with an empty tuple.
@@ -44,14 +48,14 @@ class CommitCheck(BaseCheck):
     """Parent class for all single commit checks"""
     commit = None
 
-    def for_commit_list(self, commit_list):
-        return self
-
     def for_commit(self, commit):
-        new = type(self)()
+        new = self.clone()
         new.commit = commit
         new.ready = True
         return new
+
+    def for_committed_file(self, committed_file):
+        return None
 
     def __str__(self):
         return '{} on {}'.format(type(self).__name__, self.commit)

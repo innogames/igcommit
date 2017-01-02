@@ -26,7 +26,7 @@ Features
 * Accept commits tagged as `[WIP]` or `[MESS]` with issues
 * Check executable bits and shebangs
 * Check Puppet files with `puppet parser validate` and `puppet-lint`
-* Check Python files with `flake8`
+* Check Python files with `flake8` or `pycodestyle` and `pyflakes`
 * Check Ruby files with `rubocop`
 * Check shell scripts with `shellcheck`
 * Check JavaScript files with `jscs` (requires `.jscs.json` on repository)

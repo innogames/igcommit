@@ -28,14 +28,8 @@ class CommmittedFileCheck(BaseCheck):
     """
     committed_file = None
 
-    def for_commit_list(self, commit_list):
-        return self
-
-    def for_commit(self, commit):
-        return self
-
     def for_committed_file(self, committed_file):
-        new = type(self)()
+        new = self.clone()
         new.committed_file = committed_file
         new.ready = True
         return new
@@ -51,10 +45,9 @@ class CheckExecutable(CommmittedFileCheck):
     However, it would be expensive to look at the content of every file.
     """
     def for_committed_file(self, committed_file):
-        if committed_file.owner_can_execute():
-            return super(CheckExecutable, self).for_committed_file(
-                committed_file
-            )
+        if not committed_file.owner_can_execute():
+            return None
+        return super(CheckExecutable, self).for_committed_file(committed_file)
 
     def get_problems(self):
         extension = self.committed_file.get_extension()
@@ -110,11 +103,26 @@ class CheckExecutable(CommmittedFileCheck):
 
 class CheckCommand(CommmittedFileCheck):
     """Check command to be executed on file contents"""
+    args = None
+    extension = None
     exe_path = None
 
-    def __init__(self, args=None, extension=None):
-        self.args = args
-        self.extension = extension
+    def __init__(self, args=None, extension=None, **kwargs):
+        if args:
+            self.args = args
+        if extension:
+            self.extension = extension
+        super(CheckCommand, self).__init__(**kwargs)
+
+    def clone(self):
+        new = super(CheckCommand, self).clone()
+        if self.args:
+            new.args = self.args
+        if self.extension:
+            new.extension = self.extension
+        if self.exe_path:
+            new.exe_path = self.exe_path
+        return new
 
     def get_exe_path(self):
         if not self.exe_path:
@@ -122,16 +130,22 @@ class CheckCommand(CommmittedFileCheck):
         return self.exe_path
 
     def for_commit_list(self, commit_list):
-        if self.get_exe_path():
-            return self
+        if not self.get_exe_path():
+            return None
+        return super(CheckCommand, self).for_commit_list(commit_list)
 
     def for_committed_file(self, committed_file):
-        if not self.possible_for_committed_file(committed_file):
+        if (
+            self.extension and
+            committed_file.get_extension() != self.extension and
+            not (
+                self.extension in file_extensions and
+                committed_file.exe and
+                file_extensions[self.extension].search(committed_file.exe)
+            )
+        ):
             return None
         new = super(CheckCommand, self).for_committed_file(committed_file)
-        new.args = self.args
-        new.extension = self.extension
-        new.exe_path = self.get_exe_path()
         new.content_proc = committed_file.get_content_proc()
         new.check_proc = Popen(
             (self.get_exe_path(), ) + self.args[1:],
@@ -141,16 +155,6 @@ class CheckCommand(CommmittedFileCheck):
         )
         new.content_proc.stdout.close()   # Allow it to receive a SIGPIPE
         return new
-
-    def possible_for_committed_file(self, committed_file):
-        return (
-            not self.extension or
-            committed_file.get_extension() == self.extension or (
-                self.extension in file_extensions and
-                committed_file.exe and
-                file_extensions[self.extension].search(committed_file.exe)
-            )
-        )
 
     def get_problems(self):
         for line in self.check_proc.stdout:
