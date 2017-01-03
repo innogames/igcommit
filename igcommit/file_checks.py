@@ -190,24 +190,38 @@ class CheckCommandWithConfig(CheckCommand):
     because we run the commands in parallel.  We are ignoring those problems,
     until they start happening on production.
     """
-    def __init__(self, args=None, config_name=None, **kwargs):
+    config_optional = False
+
+    def __init__(self, args=None, config_name=None, config_optional=False,
+                 **kwargs):
         super(CheckCommandWithConfig, self).__init__(args, **kwargs)
-        self.config_file = CommittedFile(None, config_name)
+        if config_name:
+            self.config_file = CommittedFile(None, config_name)
+        if config_optional:
+            self.config_optional = True
+
+    def clone(self):
+        new = super(CheckCommandWithConfig, self).clone()
+        new.config_file = self.config_file
+        if self.config_optional:
+            new.config_optional = self.config_optional
+        return new
 
     def for_commit(self, commit):
         prev_commit = self.config_file.commit
         assert prev_commit != commit
         self.config_file.commit = commit
-        if not self.config_file.exists():
-            return None
 
-        # If the file is not changed on this commit, we can skip
-        # downloading.
-        if (
-            not prev_commit or
-            prev_commit.commit_list != commit.commit_list or
-            self.config_file.changed()
-        ):
-            self.config_file.write()
+        if self.config_file.exists():
+            # If the file is not changed on this commit, we can skip
+            # downloading.
+            if (
+                not prev_commit or
+                prev_commit.commit_list != commit.commit_list or
+                self.config_file.changed()
+            ):
+                self.config_file.write()
+        elif not self.config_optional:
+            return None
 
         return self

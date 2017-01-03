@@ -49,9 +49,11 @@ checks.append(file_checks.CheckCommand(
 ))
 
 # Python
-flake8_check = file_checks.CheckCommand(
+flake8_check = file_checks.CheckCommandWithConfig(
     ('flake8', '/dev/stdin'),
     extension='py',
+    config_name='.flake8',
+    config_optional=True,
 )
 checks.append(flake8_check)
 checks.append(file_checks.CheckCommand(
