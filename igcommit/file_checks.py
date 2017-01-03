@@ -53,28 +53,28 @@ class CheckExecutable(CommmittedFileCheck):
     def get_problems(self):
         extension = self.committed_file.get_extension()
         if extension == 'sh':
-            yield 'executable has file extension .sh'
+            yield 'warning: executable has file extension .sh'
 
         shebang = self.committed_file.get_shebang()
         if not shebang:
-            yield 'no shebang'
+            yield 'error: no shebang'
             self.failed = True
             return
 
         shebang_split = shebang.split(None, 2)
         if shebang_split[0] == '/usr/bin/env':
             if len(shebang_split) == 1:
-                yield '/usr/bin/env must have an argument'
+                yield 'error: /usr/bin/env must have an argument'
                 self.failed = True
                 return
             exe = shebang_split[1]
         elif shebang_split[0].startswith('/'):
             if shebang_split[0].startswith('/usr'):
-                yield 'shebang is not portable (use /usr/bin/env)'
+                yield 'warning: shebang is not portable (use /usr/bin/env)'
             exe = shebang_split[0].rsplit('/', 1)[1]
         else:
             exe = shebang_split[0]
-            yield 'shebang executable {} is not full path'.format(exe)
+            yield 'error: shebang executable {} is not full path'.format(exe)
             self.failed = True
 
         # We are saving the executable name on the file to let it be used
@@ -84,7 +84,8 @@ class CheckExecutable(CommmittedFileCheck):
         if extension in file_extensions:
             if not file_extensions[extension].search(exe):
                 yield (
-                    'shebang executable "{}" doesn\'t match pattern "{}"'
+                    'error: shebang executable "{}" doesn\'t match '
+                    'pattern "{}"'
                     .format(exe, file_extensions[extension].pattern)
                 )
                 self.failed = True
@@ -92,7 +93,7 @@ class CheckExecutable(CommmittedFileCheck):
             for key, pattern in file_extensions.items():
                 if pattern.search(exe) and key != extension:
                     yield (
-                        'shebang executable {} matches pattern of file '
+                        'error: shebang executable {} matches pattern of file '
                         'extension ".{}"'
                         .format(exe, key)
                     )
@@ -176,16 +177,26 @@ class CheckCommand(CommmittedFileCheck):
         """We are piping the source from Git to the commands.  We want to
         hide the file path from the users as we show it already on the headers.
         """
+        prefix = ''
+
         line_split = line.split(':', 3)
         if (
-            len(line_split) > 3 and
+            len(line_split) == 4 and
             len(line_split[0]) < len('--/dev/stdin--') and
             ('stdin' in line_split[0].lower() or line_split[0] == 'input') and
             line_split[1].isdigit() and
             line_split[2].isdigit()
         ):
-            return 'line {} col {}:{}'.format(*line_split[1:])
-        return line
+            prefix = 'line {} col {}: '.format(*line_split[1:3])
+            line = line_split[3].strip()
+
+        for severity in ['warning', 'error']:
+            if line.lower().startswith(severity):
+                prefix = severity + ': ' + prefix
+                line = line[len(severity):].strip(' :-')
+                break
+
+        return prefix + line
 
     def __str__(self):
         return '{} "{}" on {}'.format(

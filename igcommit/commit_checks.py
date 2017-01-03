@@ -35,8 +35,10 @@ class CheckDuplicateCommitSummaries(BaseCheck):
                 duplicate_summaries.append(summary)
                 continue
             if len(duplicate_summaries) > 1:
-                for summary in duplicate_summaries:
-                    yield summary
+                yield 'error: summary "{}" duplicated {} times'.format(
+                    min(duplicate_summaries, key=len),
+                    len(duplicate_summaries),
+                )
                 self.failed = True
             duplicate_summaries = [summary]
 
@@ -65,7 +67,7 @@ class CheckMisleadingMergeCommit(CommitCheck):
     def get_problems(self):
         summary = self.commit.get_summary()
         if summary.startswith("Merge branch 'master'"):
-            yield summary
+            yield 'error: merge commit from "master"'
             self.failed = True
 
 
@@ -73,64 +75,64 @@ class CheckCommitMessage(CommitCheck):
     def get_problems(self):
         for line_id, line in enumerate(self.commit.get_message().splitlines()):
             if line_id == 1 and line:
-                yield 'summary extends the first line'
+                yield 'error: summary extends the first line'
                 self.failed = True
             if line and line[-1] == ' ':
-                yield 'line {}: trailing space'.format(line_id + 1)
+                yield 'error: line {}: trailing space'.format(line_id + 1)
                 self.failed = True
             if line_id > 1 and line.startswith('    ') or line.startswith('>'):
                 continue
             if len(line) >= 80:
-                yield 'line {}: longer than 80'.format(line_id + 1)
+                yield 'warning: line {}: longer than 80'.format(line_id + 1)
 
 
 class CheckCommitSummary(CommitCheck):
     def get_problems(self):
         tags, rest = self.commit.parse_tags()
         if '  ' in rest:
-            yield 'multiple spaces'
+            yield 'warning: multiple spaces'
 
         if rest.startswith('['):
-            yield 'not terminated commit tags'
+            yield 'warning: not terminated commit tags'
         if tags:
             if not rest.startswith(' '):
-                yield 'commit tags not separated with space'
+                yield 'warning: commit tags not separated with space'
             rest = rest[1:]
 
         if rest.startswith('Revert'):
             rest = rest[len('Revert'):]
             if not rest.startswith(' "') or not rest.endswith('"'):
-                yield 'ill-formatted revert commit'
+                yield 'warning: ill-formatted revert commit'
             return
 
         if len(rest) > 72:
-            yield 'summary longer than 72 characters'
+            yield 'warning: summary longer than 72 characters'
 
         if ':' in rest[:24]:
             category, rest = rest.split(':', 1)
             if not category[0].isalpha():
-                yield 'commit category start with non-letter'
+                yield 'warning: commit category start with non-letter'
             if category != category.lower():
-                yield 'commit category has upper-case letter'
+                yield 'warning: commit category has upper-case letter'
             if not rest.startswith(' '):
-                yield 'commit category not separated with space'
+                yield 'warning: commit category not separated with space'
             rest = rest[1:]
 
         if not rest:
-            yield 'no summary'
+            yield 'error: no summary'
             self.failed = True
             return
 
         if not rest[0].isalpha():
-            yield 'summary start with non-letter'
+            yield 'warning: summary start with non-letter'
         if rest[-1] == '.':
-            yield 'summary ends with a dot'
+            yield 'warning: summary ends with a dot'
 
         first_word = rest.split(' ', 1)[0]
         if first_word.endswith('ed'):
-            yield 'past tense used on summary'
+            yield 'warning: past tense used on summary'
         if first_word.endswith('ing'):
-            yield 'continuous tense used on summary'
+            yield 'warning: continuous tense used on summary'
 
 
 class CheckCommitTags(CommitCheck):
@@ -155,12 +157,12 @@ class CheckCommitTags(CommitCheck):
         for tag in self.commit.parse_tags()[0]:
             tag_upper = tag.upper()
             if tag != tag_upper:
-                yield 'commit tag [{}] not upper-case'.format(tag)
+                yield 'error: commit tag [{}] not upper-case'.format(tag)
                 self.failed = True
             if tag_upper not in CheckCommitTags.tags:
-                yield 'commit tag [{}] not on list'.format(tag)
+                yield 'warning: commit tag [{}] not on list'.format(tag)
             if tag_upper in used_tags:
-                yield 'duplicate commit tag [{}]'.format(tag)
+                yield 'error: duplicate commit tag [{}]'.format(tag)
                 self.failed = True
             used_tags.append(tag_upper)
 
@@ -174,5 +176,5 @@ class CheckChangedFilePaths(CommitCheck):
                 extension in ('pp', 'py', 'sh') and
                 changed_file.path != changed_file.path.lower()
             ):
-                yield '{} has upper case'.format(changed_file)
+                yield 'error: {} has upper case'.format(changed_file)
                 self.failed = True
