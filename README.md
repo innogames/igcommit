@@ -42,6 +42,7 @@ Features
 * Check Ruby files with `rubocop`
 * Check shell scripts with `shellcheck`
 * Check JavaScript files with `jscs` (requires `.jscs.json` on repository)
+* Check PHP files with `phpcs`
 * Run the external check commands in parallel
 
 Here is an example problem output:
@@ -77,10 +78,11 @@ The script itself is currently configuration free.  Though, some of the syntax
 checkers called by the script uses or requires configurations.  Those
 configuration files has to be on the top level of the Git repository.
 
-| Syntax Checker | Configuration File | Note     |
-|----------------|--------------------|----------|
-| flake8         | .flake8            | optional |
-| jscs           | .jscs.json         | required |
+| Syntax Checker | Configuration File | Note
+|----------------|--------------------|-----
+| flake8         | .flake8            | optional
+| jscs           | .jscs.json         | required
+| phpcs          | phpcs.xml          | optional but recommended
 
 Pros and Cons of Pre-receive Hook
 --------------------------------

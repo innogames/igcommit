@@ -16,6 +16,7 @@ file_extensions = {
     'rb': re.compile('^ruby'),
     'sh': re.compile('sh$'),
     'js': re.compile('js$'),
+    'php': re.compile('php$'),
 }
 
 
@@ -202,21 +203,21 @@ class CheckCommandWithConfig(CheckCommand):
     because we run the commands in parallel.  We are ignoring those problems,
     until they start happening on production.
     """
-    config_optional = False
+    config_required = False
 
-    def __init__(self, args=None, config_name=None, config_optional=False,
+    def __init__(self, args=None, config_name=None, config_required=False,
                  **kwargs):
         super(CheckCommandWithConfig, self).__init__(args, **kwargs)
         if config_name:
             self.config_file = CommittedFile(None, config_name)
-        if config_optional:
-            self.config_optional = True
+        if config_required:
+            self.config_required = True
 
     def clone(self):
         new = super(CheckCommandWithConfig, self).clone()
         new.config_file = self.config_file
-        if self.config_optional:
-            new.config_optional = self.config_optional
+        if self.config_required:
+            new.config_required = self.config_required
         return new
 
     def for_commit(self, commit):
@@ -233,7 +234,7 @@ class CheckCommandWithConfig(CheckCommand):
                 self.config_file.changed()
             ):
                 self.config_file.write()
-        elif not self.config_optional:
+        elif self.config_required:
             return None
 
         return self

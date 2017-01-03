@@ -54,7 +54,6 @@ flake8_check = file_checks.CheckCommandWithConfig(
     ['flake8', '-'],
     extension='py',
     config_name='.flake8',
-    config_optional=True,
 )
 checks.append(flake8_check)
 checks.append(file_checks.CheckCommand(
@@ -85,6 +84,14 @@ checks.append(file_checks.CheckCommandWithConfig(
     ['jscs', '--max-errors=-1', '--reporter=unix'],
     extension='js',
     config_name='.jscs.json',
+    config_required=True,
+))
+
+# PHP
+checks.append(file_checks.CheckCommandWithConfig(
+    ['phpcs', '-q', '--report=emacs'],
+    extension='php',
+    config_name='phpcs.xml',
 ))
 
 # We are buffering the checks to let them run parallel in the background.
