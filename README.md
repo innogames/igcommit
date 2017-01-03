@@ -1,5 +1,5 @@
-InnoGames Commit Validation Script
-==================================
+Git Pre-Receive Hook to Validate Commits
+========================================
 
 The developers tend to be obsessed about code style.  It is exhausting to edit
 files again and again to have a consistent style.  This project provides
@@ -7,9 +7,21 @@ a Git pre-receive hook to validate pushed commits on the Git server side.
 The hook avoids all issues by rejecting any commit with inconsistent style
 to get in to the repository in the first place.
 
-The pre-receive hook is pretty fast because it checks only the changed files
-on the pushed commits in parallel.  It wouldn't slow you down unless your
-commits are touching hundreds of files.
+The pre-receive hook searches runs some checks on the commits on its own,
+and searches for programming language specific syntax checkers on the PATH.
+The process is pretty fast, because  only the changed files on the pushed
+commits are passed to the syntax checkers in parallel.  It wouldn't slow you
+down unless your commits are touching hundreds of files.
+
+Installation
+------------
+
+Link the [script](igcommit-receive) to `hooks/pre-receive` on you Git
+repositories on your Git server:
+
+```shell
+ln -s igcommit-receive /home/git/repositories/myproject.git/hooks/pre-receive
+```
 
 Features
 --------
@@ -58,6 +70,18 @@ Here is an example problem output:
 * line 9 is longer than 80
 ```
 
+Configuration
+-------------
+
+The script itself is currently configuration free.  Though, some of the syntax
+checkers called by the script uses or requires configurations.  Those
+configuration files has to be on the top level of the Git repository.
+
+| Syntax Checker | Configuration File | Note     |
+|----------------|--------------------|----------|
+| flake8         | .flake8            | optional |
+| jscs           | .jscs.json         | required |
+
 Pros and Cons of Pre-receive Hook
 --------------------------------
 
@@ -96,16 +120,6 @@ repositories need to be installed separately.  See the complete list of
 commands on the [script](igcommit-receive).  The commands which are not
 available on the `PATH` is not going to be used.
 
-Installation
-------------
-
-Link the [script](igcommit-receive) to `hooks/pre-receive` on you Git
-repositories on your Git server:
-
-```shell
-ln -s igcommit-receive /home/git/repositories/myproject.git/hooks/pre-receive
-```
-
 Testing
 -------
 
@@ -116,13 +130,6 @@ to test it on a Git repository against last 50 commits:
 ```shell
 git log --reverse --oneline HEAD~50..HEAD | sed 's/^/x /' | python ../igcommit/igcommit-receive
 ```
-
-Contributing
-------------
-
-Pull requests are welcome.  The script itself is currently configuration free.
-It would be nice, if you can design your feature in a way it would work
-for most people without any configuration.
 
 License
 -------
