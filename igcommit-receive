@@ -11,6 +11,7 @@ from igcommit import commit_checks, file_checks
 from igcommit.commit_list import CommitList
 from igcommit.utils import iter_buffer
 
+
 failed = False
 commits = CommitList.read_from_input()
 checks = []
@@ -28,60 +29,60 @@ checks.append(file_checks.CheckExecutable())
 
 # Puppet
 checks.append(file_checks.CheckCommand(
-    (
+    [
         'puppet',
         'parser',
         'validate',
         '--color=false',
         '--confdir=/tmp',
         '--vardir=/tmp',
-    ),
+    ],
     extension='pp',
 ))
 checks.append(file_checks.CheckCommand(
-    (
+    [
         'puppet-lint',
         '--fail-on-warnings',
         '--no-autoloader_layout-check',
         '/dev/stdin',
-    ),
+    ],
     extension='pp',
 ))
 
 # Python
 flake8_check = file_checks.CheckCommandWithConfig(
-    ('flake8', '/dev/stdin'),
+    ['flake8', '-'],
     extension='py',
     config_name='.flake8',
     config_optional=True,
 )
 checks.append(flake8_check)
 checks.append(file_checks.CheckCommand(
-    ('pycodestyle', '/dev/stdin'),
+    ['pycodestyle', '-'],
     extension='py',
     preferred_checks=[flake8_check],
 ))
 checks.append(file_checks.CheckCommand(
-    ('pyflakes', '/dev/stdin'),
+    ['pyflakes'],
     extension='py',
     preferred_checks=[flake8_check],
 ))
 
 # Ruby
 checks.append(file_checks.CheckCommand(
-    ('rubocop', '--format=emacs', '--stdin', '/dev/stdin'),
+    ['rubocop', '--format=emacs', '--stdin', '/dev/stdin'],
     extension='rb',
 ))
 
 # Shell
 checks.append(file_checks.CheckCommand(
-    ('shellcheck', '--format=gcc', '/dev/stdin'),
+    ['shellcheck', '--format=gcc', '/dev/stdin'],
     extension='sh',
 ))
 
 # JavaScript
 checks.append(file_checks.CheckCommandWithConfig(
-    ('jscs', '--max-errors=-1', '--reporter=unix', '/dev/stdin'),
+    ['jscs', '--max-errors=-1', '--reporter=unix'],
     extension='js',
     config_name='.jscs.json',
 ))

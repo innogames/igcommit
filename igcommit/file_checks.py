@@ -148,7 +148,7 @@ class CheckCommand(CommmittedFileCheck):
         new = super(CheckCommand, self).for_committed_file(committed_file)
         new.content_proc = committed_file.get_content_proc()
         new.check_proc = Popen(
-            (self.get_exe_path(), ) + self.args[1:],
+            [self.get_exe_path()] + self.args[1:],
             stdin=new.content_proc.stdout,
             stdout=PIPE,
             stderr=STDOUT,
@@ -158,10 +158,7 @@ class CheckCommand(CommmittedFileCheck):
 
     def get_problems(self):
         for line in self.check_proc.stdout:
-            line = line.strip().decode()
-            if line.startswith('/dev/stdin:'):
-                line = 'line ' + line[len('/dev/stdin:'):]
-            yield line
+            yield self._format_problem(line.strip().decode())
 
         if self.content_proc.poll() != 0:
             raise CalledProcessError(
@@ -173,6 +170,21 @@ class CheckCommand(CommmittedFileCheck):
             not self.committed_file.commit.content_can_fail()
         ):
             self.failed = True
+
+    def _format_problem(self, line):
+        """We are piping the source from Git to the commands.  We want to
+        hide the file path from the users as we show it already on the headers.
+        """
+        line_split = line.split(':', 3)
+        if (
+            len(line_split) > 3 and
+            len(line_split[0]) < len('--/dev/stdin--') and
+            ('stdin' in line_split[0].lower() or line_split[0] == 'input') and
+            line_split[1].isdigit() and
+            line_split[2].isdigit()
+        ):
+            return 'line {} col {}:{}'.format(*line_split[1:])
+        return line
 
     def __str__(self):
         return '{} "{}" on {}'.format(

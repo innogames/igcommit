@@ -76,12 +76,12 @@ class CheckCommitMessage(CommitCheck):
                 yield 'has no summary'
                 self.failed = True
             if line and line[-1] == ' ':
-                yield 'line {} has trailing space'.format(line_id + 1)
+                yield 'line {}: trailing space'.format(line_id + 1)
                 self.failed = True
             if line_id > 1 and line.startswith('    ') or line.startswith('>'):
                 continue
             if len(line) >= 80:
-                yield 'line {} is longer than 80'.format(line_id + 1)
+                yield 'line {}: longer than 80'.format(line_id + 1)
 
 
 class CheckCommitSummary(CommitCheck):
