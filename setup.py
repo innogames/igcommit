@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""igcommit - InnoGames Commit Validation Script Setup
+"""igcommit - Setup
 
 Copyright (c) 2016, InnoGames GmbH
 """
@@ -10,6 +10,6 @@ setup(
     name='igcommit',
     version='1.0',
     url='https://github.com/innogames/igcommit',
-    packages=('igcommit', ),
-    scripts=('igcommit-receive', ),
+    packages=['igcommit'],
+    scripts=['igcommit-receive'],
 )

@@ -1,8 +1,5 @@
 #!/usr/bin/env python
-"""igcommit - InnoGames Commit Validation Script
-
-This the pre-receive script for Git repositories to validate pushed commits
-on the server side.
+"""igcommit - The Git pre-receive hook to validate commits
 
 Copyright (c) 2016, InnoGames GmbH
 """
