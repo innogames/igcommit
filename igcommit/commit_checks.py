@@ -73,7 +73,7 @@ class CheckCommitMessage(CommitCheck):
     def get_problems(self):
         for line_id, line in enumerate(self.commit.get_message().splitlines()):
             if line_id == 1 and line:
-                yield 'has no summary'
+                yield 'summary extends the first line'
                 self.failed = True
             if line and line[-1] == ' ':
                 yield 'line {}: trailing space'.format(line_id + 1)
@@ -117,7 +117,10 @@ class CheckCommitSummary(CommitCheck):
             rest = rest[1:]
 
         if not rest:
-            yield 'summary extends the first line'
+            yield 'no summary'
+            self.failed = True
+            return
+
         if not rest[0].isalpha():
             yield 'summary start with non-letter'
         if rest[-1] == '.':
