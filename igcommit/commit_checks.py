@@ -117,7 +117,7 @@ class CheckCommitSummary(CommitCheck):
             rest = rest[1:]
 
         if not rest:
-            yield 'no summary'
+            yield 'summary extends the first line'
         if not rest[0].isalpha():
             yield 'summary start with non-letter'
         if rest[-1] == '.':
