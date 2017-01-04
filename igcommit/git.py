@@ -68,7 +68,9 @@ class Commit(object):
         return tags, rest
 
     def content_can_fail(self):
-        return any(t in ('MESS', 'WIP') for t in self.parse_tags()[0])
+        return any(
+            t in ['HOTFIX', 'MESS', 'WIP'] for t in self.parse_tags()[0]
+        )
 
     def get_changed_files(self):
         """Return the list of added or modified files on a commit"""

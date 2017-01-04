@@ -35,7 +35,7 @@ Features
 * Check commit summary formatting
 * Validate commit tags against a list `[BUGFIX]`, `[FEATURE]`, `[WIP]`...
 * Check for changed file paths
-* Accept commits tagged as `[WIP]` or `[MESS]` with issues
+* Accept commits tagged as `[HOTFIX]`, `[MESS]` or `[WIP]` with issues
 * Check executable bits and shebangs
 * Check Puppet files with `puppet parser validate` and `puppet-lint`
 * Check Python files with `flake8` or `pycodestyle` and `pyflakes`
