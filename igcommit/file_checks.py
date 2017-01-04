@@ -190,7 +190,7 @@ class CheckCommand(CommmittedFileCheck):
             prefix = 'line {} col {}: '.format(*line_split[1:3])
             line = line_split[3].strip()
 
-        for severity in ['warning', 'error']:
+        for severity in ['info', 'warning', 'error']:
             if line.lower().startswith(severity):
                 prefix = severity + ': ' + prefix
                 line = line[len(severity):].strip(' :-')
