@@ -76,6 +76,7 @@ configuration files has to be on the top level of the Git repository.
 
 | Syntax Checker | Configuration File | Note
 |----------------|--------------------|-----
+| puppet-lint    | .puppet-lint.rc    | optional
 | flake8         | .flake8            | optional
 | jscs           | .jscs.json         | required
 | phpcs          | phpcs.xml          | optional but recommended

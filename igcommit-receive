@@ -36,14 +36,10 @@ checks.append(file_checks.CheckCommand(
     ],
     extension='pp',
 ))
-checks.append(file_checks.CheckCommand(
-    [
-        'puppet-lint',
-        '--fail-on-warnings',
-        '--no-autoloader_layout-check',
-        '/dev/stdin',
-    ],
+checks.append(file_checks.CheckCommandWithConfig(
+    ['puppet-lint', '--no-autoloader_layout-check', '/dev/stdin'],
     extension='pp',
+    config_name='.puppet-lint.rc',
 ))
 
 # Python
