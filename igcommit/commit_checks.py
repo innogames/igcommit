@@ -4,47 +4,7 @@ Copyright (c) 2016, InnoGames GmbH
 """
 
 from igcommit.base_check import CheckState, BaseCheck
-from igcommit.git import CommitList, Commit
-
-
-class CheckDuplicateCommitSummaries(BaseCheck):
-    """Check repeated commit summaries on a single commit list
-
-    We are not exact matching the commit summaries, but searching summaries
-    on the beginning of other ones.  This covers summaries like "Fix the bug"
-    and "Fix the bug really" which is common bad practice for some reason.
-    """
-    commit_list = None
-
-    def prepare(self, obj):
-        if not isinstance(obj, CommitList):
-            return super(CheckDuplicateCommitSummaries, self).prepare(obj)
-
-        if len(obj) <= 1:
-            return None
-
-        new = self.clone()
-        new.commit_list = obj
-        return new
-
-    def get_problems(self):
-        duplicate_summaries = [()]  # Nothing starts with an empty tuple.
-        for commit in sorted(self.commit_list, key=Commit.get_summary):
-            summary = commit.get_summary()
-            if summary.startswith(duplicate_summaries[0]):
-                duplicate_summaries.append(summary)
-                continue
-            if len(duplicate_summaries) > 1:
-                yield 'error: summary "{}" duplicated {} times'.format(
-                    min(duplicate_summaries, key=len),
-                    len(duplicate_summaries),
-                )
-                self.set_state(CheckState.failed)
-            duplicate_summaries = [summary]
-        self.set_state(CheckState.done)
-
-    def __str__(self):
-        return '{} on {}'.format(type(self).__name__, self.commit_list)
+from igcommit.git import Commit
 
 
 class CommitCheck(BaseCheck):
@@ -61,15 +21,6 @@ class CommitCheck(BaseCheck):
 
     def __str__(self):
         return '{} on {}'.format(type(self).__name__, self.commit)
-
-
-class CheckMisleadingMergeCommit(CommitCheck):
-    def get_problems(self):
-        summary = self.commit.get_summary()
-        if summary.startswith("Merge branch 'master'"):
-            yield 'error: merge commit from "master"'
-            self.set_state(CheckState.failed)
-        self.set_state(CheckState.done)
 
 
 class CheckCommitMessage(CommitCheck):

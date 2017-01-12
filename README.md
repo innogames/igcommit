@@ -127,7 +127,9 @@ be active on different Git repositories.  You can run a command like this
 to test it on a Git repository against last 50 commits:
 
 ```shell
-git log --reverse --oneline HEAD~50..HEAD | sed 's/^/x /' | python ../igcommit/igcommit-receive
+git log --reverse --oneline HEAD~50..HEAD |
+    sed 's:\([^ ]*\) .*:\1 \1 refs/heads/master:' |
+    python ../igcommit/igcommit-receive
 ```
 
 License

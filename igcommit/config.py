@@ -4,13 +4,15 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
-from igcommit import commit_checks, file_checks
+from igcommit import commit_list_checks, commit_checks, file_checks
 
 checks = []
 
+# Commit list checks
+checks.append(commit_list_checks.CheckDuplicateCommitSummaries())
+checks.append(commit_list_checks.CheckMisleadingMergeCommit())
+
 # Commit checks
-checks.append(commit_checks.CheckDuplicateCommitSummaries())
-checks.append(commit_checks.CheckMisleadingMergeCommit())
 checks.append(commit_checks.CheckCommitMessage())
 checks.append(commit_checks.CheckCommitSummary())
 checks.append(commit_checks.CheckCommitTags())

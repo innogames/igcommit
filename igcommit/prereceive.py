@@ -45,11 +45,12 @@ class Runner(object):
                 yield check
 
     def expand_checks_to_input(self, checks, line):
-        commit = Commit(line.split(None, 2)[1])
+        line_split = line.split()
+        commit = Commit(line_split[1])
         if not commit:
             return
 
-        commit_list = commit.get_new_commit_list()
+        commit_list = commit.get_new_commit_list(line_split[2])
 
         # Appending the actual commit on the list to the new ones makes
         # testing easier.

@@ -12,9 +12,18 @@ git_exe_path = get_exe_path('git')
 
 class CommitList(list):
     """Routines on a list of sequential commits"""
+    ref_path = None
+
+    def __init__(self, other, ref_path=None):
+        super(CommitList, self).__init__(other)
+        if ref_path:
+            self.ref_path = ref_path
 
     def __str__(self):
-        return '{}..{}'.format(self[0], self[-1])
+        name = '{}..{}'.format(self[0], self[-1])
+        if self.ref_path:
+            name += ' ({})'.format(self.ref_path)
+        return name
 
 
 class Commit(object):
@@ -39,7 +48,7 @@ class Commit(object):
     def __eq__(self, other):
         return isinstance(other, Commit) and self.commit_id == other.commit_id
 
-    def get_new_commit_list(self):
+    def get_new_commit_list(self, ref_path):
         """Get the list of parent new commits in order"""
         output = check_output((
             git_exe_path,
@@ -49,7 +58,7 @@ class Commit(object):
             '--all',
             '--reverse',
         )).decode()
-        commit_list = CommitList()
+        commit_list = CommitList([], ref_path)
         for commit_id in output.splitlines():
             commit_list.append(Commit(commit_list, commit_id))
         return commit_list
