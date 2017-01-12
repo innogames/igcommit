@@ -4,12 +4,16 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
-from distutils.core import setup
+from setuptools import setup
 
 setup(
     name='igcommit',
     version='1.0',
     url='https://github.com/innogames/igcommit',
     packages=['igcommit'],
-    scripts=['igcommit-receive'],
+    entry_points={
+        'console_scripts': [
+            'igcommit-receive=igcommit.prereceive:Runner',
+        ],
+    },
 )

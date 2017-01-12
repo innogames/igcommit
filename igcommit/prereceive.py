@@ -8,18 +8,19 @@ from fileinput import input
 from time import sleep
 
 from igcommit.base_check import CheckState, prepare_checks
+from igcommit.config import checks
 from igcommit.git import Commit
 from igcommit.utils import iter_buffer
 
 
 class Runner(object):
-    def __init__(self, checks):
+    def __init__(self):
         self.state = CheckState.new
         self.checked_commit_ids = set()
         self.changed_file_checks = defaultdict(list)
-        self.run(checks)
+        self.run()
 
-    def run(self, checks):
+    def run(self):
         # We are buffering the checks to let them run parallel in
         # the background.  Parallelization only applies to the CheckCommands.
         # It has no overhead, because we have to run those commands the same
@@ -35,8 +36,12 @@ class Runner(object):
             raise SystemExit('Checks failed')
 
     def expand_checks(self, checks):
+        next_checks = []
+        for check in prepare_checks(checks, None, next_checks):
+            yield check
+
         for line in input():
-            for check in self.expand_checks_to_input(checks, line):
+            for check in self.expand_checks_to_input(next_checks, line):
                 yield check
 
     def expand_checks_to_input(self, checks, line):

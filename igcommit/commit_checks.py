@@ -17,7 +17,8 @@ class CheckDuplicateCommitSummaries(BaseCheck):
     commit_list = None
 
     def prepare(self, obj):
-        assert isinstance(obj, CommitList)
+        if not isinstance(obj, CommitList):
+            return super(CheckDuplicateCommitSummaries, self).prepare(obj)
 
         if len(obj) <= 1:
             return None

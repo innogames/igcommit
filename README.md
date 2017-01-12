@@ -116,7 +116,7 @@ Dependencies
 The script has no dependencies other than Python 2.7, 3.3 or above.  It runs
 the validation commands using the shell.  The necessary ones for checked
 repositories need to be installed separately.  See the complete list of
-commands on the [script](igcommit-receive).  The commands which are not
+commands on the [config.py](igcommit/config.py).  The commands which are not
 available on the `PATH` is not going to be used.
 
 Testing
