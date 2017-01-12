@@ -41,7 +41,8 @@ Features
 * Check Python files with `flake8` or `pycodestyle` and `pyflakes`
 * Check Ruby files with `rubocop`
 * Check shell scripts with `shellcheck`
-* Check JavaScript files with `jscs` (requires `.jscs.json` on repository)
+* Check JavaScript files with `jscs` (requires `.jscs.json` on repository) or
+  `standard`
 * Check PHP files with `phpcs`
 * Run the external check commands in parallel
 

@@ -111,12 +111,15 @@ class CheckCommand(CommmittedFileCheck):
     args = None
     extension = None
     exe_path = None
+    header = 0
 
-    def __init__(self, args=None, extension=None, **kwargs):
+    def __init__(self, args=None, extension=None, header=0, **kwargs):
         if args:
             self.args = args
         if extension:
             self.extension = extension
+        if header:
+            self.header = header
         super(CheckCommand, self).__init__(**kwargs)
 
     def clone(self):
@@ -125,6 +128,8 @@ class CheckCommand(CommmittedFileCheck):
             new.args = self.args
         if self.extension:
             new.extension = self.extension
+        if self.header:
+            new.header = self.header
         if self.exe_path:
             new.exe_path = self.exe_path
         return new
@@ -164,8 +169,9 @@ class CheckCommand(CommmittedFileCheck):
         return new
 
     def get_problems(self):
-        for line in self.check_proc.stdout:
-            yield self._format_problem(line.strip().decode())
+        for line_id, line in enumerate(self.check_proc.stdout):
+            if line_id >= self.header:
+                yield self._format_problem(line.strip().decode())
 
         if self.content_proc.poll() != 0:
             raise CalledProcessError(
@@ -189,8 +195,7 @@ class CheckCommand(CommmittedFileCheck):
         line_split = line.split(':', 3)
         if (
             len(line_split) == 4 and
-            len(line_split[0]) < len('--/dev/stdin--') and
-            ('stdin' in line_split[0].lower() or line_split[0] == 'input') and
+            len(line_split[0]) >= len('stdin') and
             line_split[1].isdigit() and
             line_split[2].isdigit()
         ):

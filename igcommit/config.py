@@ -70,11 +70,18 @@ checks.append(file_checks.CheckCommand(
 ))
 
 # JavaScript
-checks.append(file_checks.CheckCommandWithConfig(
+jscs_check = file_checks.CheckCommandWithConfig(
     ['jscs', '--max-errors=-1', '--reporter=unix'],
     extension='js',
     config_name='.jscs.json',
     config_required=True,
+)
+checks.append(jscs_check)
+checks.append(file_checks.CheckCommand(
+    ['standard', '--stdin'],
+    extension='js',
+    header=2,
+    preferred_checks=[jscs_check],
 ))
 
 # PHP
