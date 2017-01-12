@@ -5,11 +5,9 @@ Copyright (c) 2016, InnoGames GmbH
 """
 
 from igcommit import commit_checks, file_checks
-from igcommit.prereceive import run
-from igcommit.utils import iter_buffer
+from igcommit.prereceive import Runner
 
 
-failed = False
 checks = []
 
 # Commit checks
@@ -86,13 +84,4 @@ checks.append(file_checks.CheckCommandWithConfig(
     config_name='phpcs.xml',
 ))
 
-# We are buffering the checks to let them run parallel in the background.
-# Parallelization only applies to the CheckCommands.  It has no overhead,
-# because we have to run those commands the same way externally, anyway.
-# We only have a limit in there to avoid hitting OS's process limit.
-for check in iter_buffer(run(checks), 32):
-    check.print_problems()
-    failed |= check.failed
-
-if failed:
-    raise SystemExit('Checks failed')
+Runner(checks)

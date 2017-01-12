@@ -6,7 +6,7 @@ Copyright (c) 2016, InnoGames GmbH
 from re import compile
 from subprocess import CalledProcessError, Popen, PIPE, STDOUT
 
-from igcommit.base_check import BaseCheck
+from igcommit.base_check import CheckState, BaseCheck
 from igcommit.git import Commit, CommittedFile
 from igcommit.utils import get_exe_path
 
@@ -35,7 +35,6 @@ class CommmittedFileCheck(BaseCheck):
 
         new = self.clone()
         new.committed_file = obj
-        new.ready = True
         return new
 
 
@@ -49,10 +48,9 @@ class CheckExecutable(CommmittedFileCheck):
     However, it would be expensive to look at the content of every file.
     """
     def prepare(self, obj):
-        new = super(CheckExecutable, self).prepare(obj)
-        if new.ready and not new.committed_file.owner_can_execute():
+        if isinstance(obj, CommittedFile) and not obj.owner_can_execute():
             return None
-        return new
+        return super(CheckExecutable, self).prepare(obj)
 
     def get_problems(self):
         extension = self.committed_file.get_extension()
@@ -62,14 +60,14 @@ class CheckExecutable(CommmittedFileCheck):
         shebang = self.committed_file.get_shebang()
         if not shebang:
             yield 'error: no shebang'
-            self.failed = True
+            self.set_state(CheckState.failed)
             return
 
         shebang_split = shebang.split(None, 2)
         if shebang_split[0] == '/usr/bin/env':
             if len(shebang_split) == 1:
                 yield 'error: /usr/bin/env must have an argument'
-                self.failed = True
+                self.set_state(CheckState.failed)
                 return
             exe = shebang_split[1]
         elif shebang_split[0].startswith('/'):
@@ -79,7 +77,7 @@ class CheckExecutable(CommmittedFileCheck):
         else:
             exe = shebang_split[0]
             yield 'error: shebang executable {} is not full path'.format(exe)
-            self.failed = True
+            self.set_state(CheckState.failed)
 
         # We are saving the executable name on the file to let it be used
         # by the following checks.  TODO Make it more robust.
@@ -92,7 +90,7 @@ class CheckExecutable(CommmittedFileCheck):
                     'pattern "{}"'
                     .format(exe, file_extensions[extension].pattern)
                 )
-                self.failed = True
+                self.set_state(CheckState.failed)
         if extension:
             for key, pattern in file_extensions.items():
                 if pattern.search(exe) and key != extension:
@@ -101,7 +99,8 @@ class CheckExecutable(CommmittedFileCheck):
                         'extension ".{}"'
                         .format(exe, key)
                     )
-                    self.failed = True
+                    self.set_state(CheckState.failed)
+        self.set_state(CheckState.done)
 
     def __str__(self):
         return '{} on {}'.format(type(self).__name__, self.committed_file)
@@ -140,21 +139,21 @@ class CheckCommand(CommmittedFileCheck):
             return None
 
         new = super(CheckCommand, self).prepare(obj)
-        if not new or not new.ready:
+        if not isinstance(obj, CommittedFile):
             return new
 
         if (
             new.extension and
-            new.committed_file.get_extension() != new.extension and
+            obj.get_extension() != new.extension and
             not (
                 new.extension in file_extensions and
-                new.committed_file.exe and
-                file_extensions[new.extension].search(new.committed_file.exe)
+                obj.exe and
+                file_extensions[new.extension].search(obj.exe)
             )
         ):
             return None
 
-        new.content_proc = new.committed_file.get_content_proc()
+        new.content_proc = obj.get_content_proc()
         new.check_proc = Popen(
             [self.get_exe_path()] + self.args[1:],
             stdin=new.content_proc.stdout,
@@ -177,7 +176,9 @@ class CheckCommand(CommmittedFileCheck):
             self.check_proc.wait() != 0 and
             not self.committed_file.commit.content_can_fail()
         ):
-            self.failed = True
+            self.set_state(CheckState.failed)
+        else:
+            self.set_state(CheckState.done)
 
     def _format_problem(self, line):
         """We are piping the source from Git to the commands.  We want to

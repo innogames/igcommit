@@ -3,7 +3,7 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
-from igcommit.base_check import BaseCheck
+from igcommit.base_check import CheckState, BaseCheck
 from igcommit.git import CommitList, Commit
 
 
@@ -24,7 +24,6 @@ class CheckDuplicateCommitSummaries(BaseCheck):
 
         new = self.clone()
         new.commit_list = obj
-        new.ready = True
         return new
 
     def get_problems(self):
@@ -39,8 +38,9 @@ class CheckDuplicateCommitSummaries(BaseCheck):
                     min(duplicate_summaries, key=len),
                     len(duplicate_summaries),
                 )
-                self.failed = True
+                self.set_state(CheckState.failed)
             duplicate_summaries = [summary]
+        self.set_state(CheckState.done)
 
     def __str__(self):
         return '{} on {}'.format(type(self).__name__, self.commit_list)
@@ -56,7 +56,6 @@ class CommitCheck(BaseCheck):
 
         new = self.clone()
         new.commit = obj
-        new.ready = True
         return new
 
     def __str__(self):
@@ -68,7 +67,8 @@ class CheckMisleadingMergeCommit(CommitCheck):
         summary = self.commit.get_summary()
         if summary.startswith("Merge branch 'master'"):
             yield 'error: merge commit from "master"'
-            self.failed = True
+            self.set_state(CheckState.failed)
+        self.set_state(CheckState.done)
 
 
 class CheckCommitMessage(CommitCheck):
@@ -76,14 +76,15 @@ class CheckCommitMessage(CommitCheck):
         for line_id, line in enumerate(self.commit.get_message().splitlines()):
             if line_id == 1 and line:
                 yield 'error: summary extends the first line'
-                self.failed = True
+                self.set_state(CheckState.failed)
             if line and line[-1] == ' ':
                 yield 'error: line {}: trailing space'.format(line_id + 1)
-                self.failed = True
+                self.set_state(CheckState.failed)
             if line_id > 1 and line.startswith('    ') or line.startswith('>'):
                 continue
             if len(line) >= 80:
                 yield 'warning: line {}: longer than 80'.format(line_id + 1)
+        self.set_state(CheckState.done)
 
 
 class CheckCommitSummary(CommitCheck):
@@ -103,6 +104,7 @@ class CheckCommitSummary(CommitCheck):
             rest = rest[len('Revert'):]
             if not rest.startswith(' "') or not rest.endswith('"'):
                 yield 'warning: ill-formatted revert commit'
+            self.set_state(CheckState.done)
             return
 
         if len(rest) > 72:
@@ -120,7 +122,7 @@ class CheckCommitSummary(CommitCheck):
 
         if not rest:
             yield 'error: no summary'
-            self.failed = True
+            self.set_state(CheckState.failed)
             return
 
         if not rest[0].isalpha():
@@ -133,6 +135,7 @@ class CheckCommitSummary(CommitCheck):
             yield 'warning: past tense used on summary'
         if first_word.endswith('ing'):
             yield 'warning: continuous tense used on summary'
+        self.set_state(CheckState.done)
 
 
 class CheckCommitTags(CommitCheck):
@@ -158,13 +161,14 @@ class CheckCommitTags(CommitCheck):
             tag_upper = tag.upper()
             if tag != tag_upper:
                 yield 'error: commit tag [{}] not upper-case'.format(tag)
-                self.failed = True
+                self.set_state(CheckState.failed)
             if tag_upper not in CheckCommitTags.tags:
                 yield 'warning: commit tag [{}] not on list'.format(tag)
             if tag_upper in used_tags:
                 yield 'error: duplicate commit tag [{}]'.format(tag)
-                self.failed = True
+                self.set_state(CheckState.failed)
             used_tags.append(tag_upper)
+        self.set_state(CheckState.done)
 
 
 class CheckChangedFilePaths(CommitCheck):
@@ -177,4 +181,5 @@ class CheckChangedFilePaths(CommitCheck):
                 changed_file.path != changed_file.path.lower()
             ):
                 yield 'error: {} has upper case'.format(changed_file)
-                self.failed = True
+                self.set_state(CheckState.failed)
+        self.set_state(CheckState.done)

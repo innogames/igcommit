@@ -4,6 +4,13 @@ Copyright (c) 2016, InnoGames GmbH
 """
 
 
+class CheckState(object):
+    new = 0
+    cloned = 1
+    done = 2
+    failed = 3
+
+
 class BaseCheck(object):
     """The parent class of all checks
 
@@ -12,8 +19,7 @@ class BaseCheck(object):
     methods to clone the check.
     """
     preferred_checks = []
-    ready = False
-    failed = False
+    state = CheckState.new
 
     def __init__(self, preferred_checks=None):
         if preferred_checks:
@@ -23,7 +29,12 @@ class BaseCheck(object):
         new = type(self)()
         if self.preferred_checks:
             new.preferred_checks = self.preferred_checks
+        new.state = CheckState.cloned
         return new
+
+    def set_state(self, state):
+        assert state > CheckState.cloned
+        self.state = max(self.state, state)
 
     def prepare(self, obj):
         for check in self.preferred_checks:
@@ -43,3 +54,21 @@ class BaseCheck(object):
 
     def __str__(self):
         return type(self).__name__
+
+
+def prepare_checks(checks, obj, next_checks=None):
+    """Prepare the checks to the object
+
+    It yields the checks prepared and ready.  The checks which are not
+    ready yet are going do be appended to the next_checks list.
+    """
+    for check in checks:
+        prepared_check = check.prepare(obj)
+        if prepared_check:
+            cloned = prepared_check.state >= CheckState.cloned
+            assert next_checks is not None or cloned
+
+            if cloned:
+                yield prepared_check
+            else:
+                next_checks.append(prepared_check)
