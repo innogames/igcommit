@@ -3,20 +3,20 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
-import re
+from re import compile
 from subprocess import CalledProcessError, Popen, PIPE, STDOUT
 
 from igcommit.base_check import BaseCheck
-from igcommit.git import CommittedFile
+from igcommit.git import Commit, CommittedFile
 from igcommit.utils import get_exe_path
 
 file_extensions = {
-    'pp': re.compile('^puppet'),
-    'py': re.compile('^python'),
-    'rb': re.compile('^ruby'),
-    'sh': re.compile('sh$'),
-    'js': re.compile('js$'),
-    'php': re.compile('php$'),
+    'pp': compile('^puppet'),
+    'py': compile('^python'),
+    'rb': compile('^ruby'),
+    'sh': compile('sh$'),
+    'js': compile('js$'),
+    'php': compile('php$'),
 }
 
 
@@ -29,9 +29,12 @@ class CommmittedFileCheck(BaseCheck):
     """
     committed_file = None
 
-    def for_committed_file(self, committed_file):
+    def prepare(self, obj):
+        if not isinstance(obj, CommittedFile):
+            return super(CommmittedFileCheck, self).prepare(obj)
+
         new = self.clone()
-        new.committed_file = committed_file
+        new.committed_file = obj
         new.ready = True
         return new
 
@@ -45,10 +48,11 @@ class CheckExecutable(CommmittedFileCheck):
     to warn about it, as it is very common to omit executable bit on Git.
     However, it would be expensive to look at the content of every file.
     """
-    def for_committed_file(self, committed_file):
-        if not committed_file.owner_can_execute():
+    def prepare(self, obj):
+        new = super(CheckExecutable, self).prepare(obj)
+        if new.ready and not new.committed_file.owner_can_execute():
             return None
-        return super(CheckExecutable, self).for_committed_file(committed_file)
+        return new
 
     def get_problems(self):
         extension = self.committed_file.get_extension()
@@ -131,24 +135,26 @@ class CheckCommand(CommmittedFileCheck):
             self.exe_path = get_exe_path(self.args[0])
         return self.exe_path
 
-    def for_commit_list(self, commit_list):
+    def prepare(self, obj):
         if not self.get_exe_path():
             return None
-        return super(CheckCommand, self).for_commit_list(commit_list)
 
-    def for_committed_file(self, committed_file):
+        new = super(CheckCommand, self).prepare(obj)
+        if not new or not new.ready:
+            return new
+
         if (
-            self.extension and
-            committed_file.get_extension() != self.extension and
+            new.extension and
+            new.committed_file.get_extension() != new.extension and
             not (
-                self.extension in file_extensions and
-                committed_file.exe and
-                file_extensions[self.extension].search(committed_file.exe)
+                new.extension in file_extensions and
+                new.committed_file.exe and
+                file_extensions[new.extension].search(new.committed_file.exe)
             )
         ):
             return None
-        new = super(CheckCommand, self).for_committed_file(committed_file)
-        new.content_proc = committed_file.get_content_proc()
+
+        new.content_proc = new.committed_file.get_content_proc()
         new.check_proc = Popen(
             [self.get_exe_path()] + self.args[1:],
             stdin=new.content_proc.stdout,
@@ -231,21 +237,25 @@ class CheckCommandWithConfig(CheckCommand):
             new.config_required = self.config_required
         return new
 
-    def for_commit(self, commit):
-        prev_commit = self.config_file.commit
-        assert prev_commit != commit
-        self.config_file.commit = commit
+    def prepare(self, obj):
+        new = super(CheckCommandWithConfig, self).prepare(obj)
+        if not isinstance(obj, Commit):
+            return new
 
-        if self.config_file.exists():
+        prev_commit = new.config_file.commit
+        assert prev_commit != obj
+        new.config_file.commit = obj
+
+        if new.config_file.exists():
             # If the file is not changed on this commit, we can skip
             # downloading.
             if (
                 not prev_commit or
-                prev_commit.commit_list != commit.commit_list or
-                self.config_file.changed()
+                prev_commit.commit_list != obj.commit_list or
+                new.config_file.changed()
             ):
-                self.config_file.write()
-        elif self.config_required:
+                new.config_file.write()
+        elif new.config_required:
             return None
 
-        return self
+        return new

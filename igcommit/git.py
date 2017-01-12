@@ -10,13 +10,20 @@ from igcommit.utils import get_exe_path
 git_exe_path = get_exe_path('git')
 
 
+class CommitList(list):
+    """Routines on a list of sequential commits"""
+
+    def __str__(self):
+        return '{}..{}'.format(self[0], self[-1])
+
+
 class Commit(object):
     """Routines on a single commit"""
     null_commit_id = '0000000000000000000000000000000000000000'
 
-    def __init__(self, commit_list, commit_id):
-        self.commit_list = commit_list
+    def __init__(self, commit_id, commit_list=None):
         self.commit_id = commit_id
+        self.commit_list = commit_list
         self.message = None
         self.changed_files = None
 
@@ -32,16 +39,20 @@ class Commit(object):
     def __eq__(self, other):
         return isinstance(other, Commit) and self.commit_id == other.commit_id
 
-    def get_new_commit_ids(self):
+    def get_new_commit_list(self):
         """Get the list of parent new commits in order"""
-        return check_output((
+        output = check_output((
             git_exe_path,
             'rev-list',
             self.commit_id,
             '--not',
             '--all',
             '--reverse',
-        )).decode().splitlines()
+        )).decode()
+        commit_list = CommitList()
+        for commit_id in output.splitlines():
+            commit_list.append(Commit(commit_list, commit_id))
+        return commit_list
 
     def get_message(self):
         if self.message is None:

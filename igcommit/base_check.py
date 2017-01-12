@@ -25,16 +25,10 @@ class BaseCheck(object):
             new.preferred_checks = self.preferred_checks
         return new
 
-    def for_commit_list(self, commit_list):
+    def prepare(self, obj):
         for check in self.preferred_checks:
-            if check.for_commit_list(commit_list):
+            if check.prepare(obj):
                 return None
-        return self
-
-    def for_commit(self, commit):
-        return self
-
-    def for_committed_file(self, committed_file):
         return self
 
     def print_problems(self):

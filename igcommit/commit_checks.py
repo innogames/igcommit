@@ -4,7 +4,7 @@ Copyright (c) 2016, InnoGames GmbH
 """
 
 from igcommit.base_check import BaseCheck
-from igcommit.git import Commit
+from igcommit.git import CommitList, Commit
 
 
 class CheckDuplicateCommitSummaries(BaseCheck):
@@ -16,16 +16,16 @@ class CheckDuplicateCommitSummaries(BaseCheck):
     """
     commit_list = None
 
-    def for_commit_list(self, commit_list):
-        if len(commit_list) <= 1:
+    def prepare(self, obj):
+        assert isinstance(obj, CommitList)
+
+        if len(obj) <= 1:
             return None
+
         new = self.clone()
-        new.commit_list = commit_list
+        new.commit_list = obj
         new.ready = True
         return new
-
-    def for_commit(self, commit):
-        return None
 
     def get_problems(self):
         duplicate_summaries = [()]  # Nothing starts with an empty tuple.
@@ -50,14 +50,14 @@ class CommitCheck(BaseCheck):
     """Parent class for all single commit checks"""
     commit = None
 
-    def for_commit(self, commit):
+    def prepare(self, obj):
+        if not isinstance(obj, Commit):
+            return super(CommitCheck, self).prepare(obj)
+
         new = self.clone()
-        new.commit = commit
+        new.commit = obj
         new.ready = True
         return new
-
-    def for_committed_file(self, committed_file):
-        return None
 
     def __str__(self):
         return '{} on {}'.format(type(self).__name__, self.commit)
