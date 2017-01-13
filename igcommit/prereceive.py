@@ -18,7 +18,6 @@ class Runner(object):
         self.state = CheckState.new
         self.checked_commit_ids = set()
         self.changed_file_checks = defaultdict(list)
-        self.run()
 
     def run(self):
         # We are buffering the checks to let them run parallel in
@@ -93,3 +92,7 @@ class Runner(object):
         for check in prepare_checks(checks, changed_file):
             yield check
             self.changed_file_checks[changed_file.path].append(check)
+
+
+def main():
+    Runner().run()

@@ -4,6 +4,6 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
-from igcommit.prereceive import Runner
+from igcommit.prereceive import main
 
-Runner()
+main()

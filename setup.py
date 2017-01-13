@@ -13,7 +13,7 @@ setup(
     packages=['igcommit'],
     entry_points={
         'console_scripts': [
-            'igcommit-receive=igcommit.prereceive:Runner',
+            'igcommit-receive=igcommit.prereceive:main',
         ],
     },
 )
