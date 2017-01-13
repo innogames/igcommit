@@ -60,7 +60,7 @@ class Commit(object):
         )).decode()
         commit_list = CommitList([], ref_path)
         for commit_id in output.splitlines():
-            commit_list.append(Commit(commit_list, commit_id))
+            commit_list.append(Commit(commit_id, commit_list))
         return commit_list
 
     def get_message(self):
