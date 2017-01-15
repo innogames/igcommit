@@ -116,14 +116,28 @@ class CheckCommand(CommmittedFileCheck):
     extension = None
     exe_path = None
     header = 0
+    config_file = None
+    config_required = False
 
-    def __init__(self, args=None, extension=None, header=0, **kwargs):
+    def __init__(
+        self,
+        args=None,
+        extension=None,
+        header=0,
+        config_name=None,
+        config_required=False,
+        **kwargs
+    ):
         if args:
             self.args = args
         if extension:
             self.extension = extension
         if header:
             self.header = header
+        if config_name:
+            self.config_file = CommittedFile(None, config_name)
+        if config_required:
+            self.config_required = True
         super(CheckCommand, self).__init__(**kwargs)
 
     def clone(self):
@@ -134,6 +148,10 @@ class CheckCommand(CommmittedFileCheck):
             new.extension = self.extension
         if self.header:
             new.header = self.header
+        if self.config_file:
+            new.config_file = self.config_file
+        if self.config_required:
+            new.config_required = self.config_required
         if self.exe_path:
             new.exe_path = self.exe_path
         return new
@@ -147,28 +165,62 @@ class CheckCommand(CommmittedFileCheck):
         new = super(CheckCommand, self).prepare(obj)
         if not new or not self.get_exe_path():
             return None
-        if not isinstance(obj, CommittedFile):
-            return new
-        if (
-            new.extension and
-            obj.get_extension() != new.extension and
-            not (
-                new.extension in file_extensions and
-                obj.exe and
-                file_extensions[new.extension].search(obj.exe)
-            )
-        ):
-            return None
 
-        new.content_proc = obj.get_content_proc()
-        new.check_proc = Popen(
+        if isinstance(obj, Commit) and new.config_file:
+            config_exists = new.prepare_config(obj)
+            if not config_exists and new.config_required:
+                return None
+
+        if isinstance(obj, CommittedFile):
+            if (
+                new.extension and
+                obj.get_extension() != new.extension and
+                not (
+                    new.extension in file_extensions and
+                    obj.exe and
+                    file_extensions[new.extension].search(obj.exe)
+                )
+            ):
+                return None
+            new.prepare_procs()
+
+        return new
+
+    def prepare_config(self, commit):
+        prev_commit = self.config_file.commit
+        assert prev_commit != commit
+        self.config_file.commit = commit
+
+        if not self.config_file.exists():
+            return False
+
+        # If the file is not changed on this commit, we can skip
+        # downloading.
+        if (
+            not prev_commit or
+            prev_commit.commit_list != commit.commit_list or
+            self.config_file.changed()
+        ):
+            # We have to download the configuration file to the current
+            # workspace to let the command find it.  It is not really safe
+            # to do that.  The workspace might not be a good place to write
+            # things.  Also, it is not safe to update this file, when it is
+            # changed on different commits, because we run the commands
+            # in parallel.  We are ignoring those problems, until they
+            # start happening on production.
+            self.config_file.write()
+
+        return True
+
+    def prepare_procs(self):
+        self.content_proc = self.committed_file.get_content_proc()
+        self.check_proc = Popen(
             [self.get_exe_path()] + self.args[1:],
-            stdin=new.content_proc.stdout,
+            stdin=self.content_proc.stdout,
             stdout=PIPE,
             stderr=STDOUT,
         )
-        new.content_proc.stdout.close()   # Allow it to receive a SIGPIPE
-        return new
+        self.content_proc.stdout.close()   # Allow it to receive a SIGPIPE
 
     def get_problems(self):
         for line_id, line in enumerate(self.check_proc.stdout):
@@ -216,54 +268,3 @@ class CheckCommand(CommmittedFileCheck):
         return '{} "{}" on {}'.format(
             type(self).__name__, self.args[0], self.committed_file
         )
-
-
-class CheckCommandWithConfig(CheckCommand):
-    """CheckCommand which requires a configuration file
-
-    We have to download the configuration file to the current workspace
-    to let the command find it.  It is not really safe to do that.
-    The workspace might not be a good place to write things.  Also, it is
-    not safe to update this file, when it is changed on different commits,
-    because we run the commands in parallel.  We are ignoring those problems,
-    until they start happening on production.
-    """
-    config_required = False
-
-    def __init__(self, args=None, config_name=None, config_required=False,
-                 **kwargs):
-        super(CheckCommandWithConfig, self).__init__(args, **kwargs)
-        if config_name:
-            self.config_file = CommittedFile(None, config_name)
-        if config_required:
-            self.config_required = True
-
-    def clone(self):
-        new = super(CheckCommandWithConfig, self).clone()
-        new.config_file = self.config_file
-        if self.config_required:
-            new.config_required = self.config_required
-        return new
-
-    def prepare(self, obj):
-        new = super(CheckCommandWithConfig, self).prepare(obj)
-        if not new or not isinstance(obj, Commit):
-            return new
-
-        prev_commit = new.config_file.commit
-        assert prev_commit != obj
-        new.config_file.commit = obj
-
-        if new.config_file.exists():
-            # If the file is not changed on this commit, we can skip
-            # downloading.
-            if (
-                not prev_commit or
-                prev_commit.commit_list != obj.commit_list or
-                new.config_file.changed()
-            ):
-                new.config_file.write()
-        elif new.config_required:
-            return None
-
-        return new

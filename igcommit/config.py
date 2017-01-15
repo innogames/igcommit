@@ -39,14 +39,14 @@ checks.append(file_checks.CheckCommand(
     ],
     extension='pp',
 ))
-checks.append(file_checks.CheckCommandWithConfig(
+checks.append(file_checks.CheckCommand(
     ['puppet-lint', '--no-autoloader_layout-check', '/dev/stdin'],
     extension='pp',
     config_name='.puppet-lint.rc',
 ))
 
 # Python
-flake8_check = file_checks.CheckCommandWithConfig(
+flake8_check = file_checks.CheckCommand(
     ['flake8', '-'],
     extension='py',
     config_name='.flake8',
@@ -76,13 +76,13 @@ checks.append(file_checks.CheckCommand(
 ))
 
 # JavaScript
-jshint_check = file_checks.CheckCommandWithConfig(
+jshint_check = file_checks.CheckCommand(
     ['jshint', '--reporter=unix', '/dev/stdin'],
     extension='js',
     config_name='.jshintrc',
 )
 checks.append(jshint_check)
-jscs_check = file_checks.CheckCommandWithConfig(
+jscs_check = file_checks.CheckCommand(
     ['jscs', '--max-errors=-1', '--reporter=unix'],
     extension='js',
     config_name='.jscs.json',
@@ -98,7 +98,7 @@ checks.append(file_checks.CheckCommand(
 ))
 
 # PHP
-checks.append(file_checks.CheckCommandWithConfig(
+checks.append(file_checks.CheckCommand(
     ['phpcs', '-q', '--report=emacs'],
     extension='php',
     config_name='phpcs.xml',
