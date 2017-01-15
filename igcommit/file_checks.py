@@ -30,10 +30,11 @@ class CommmittedFileCheck(BaseCheck):
     committed_file = None
 
     def prepare(self, obj):
-        if not isinstance(obj, CommittedFile):
-            return super(CommmittedFileCheck, self).prepare(obj)
+        new = super(CommmittedFileCheck, self).prepare(obj)
+        if not new or not isinstance(obj, CommittedFile):
+            return new
 
-        new = self.clone()
+        new = new.clone()
         new.committed_file = obj
         return new
 
@@ -48,9 +49,12 @@ class CheckExecutable(CommmittedFileCheck):
     However, it would be expensive to look at the content of every file.
     """
     def prepare(self, obj):
-        if isinstance(obj, CommittedFile) and not obj.owner_can_execute():
+        new = super(CheckExecutable, self).prepare(obj)
+        if not new or (
+            isinstance(obj, CommittedFile) and not obj.owner_can_execute()
+        ):
             return None
-        return super(CheckExecutable, self).prepare(obj)
+        return new
 
     def get_problems(self):
         extension = self.committed_file.get_extension()
@@ -140,13 +144,11 @@ class CheckCommand(CommmittedFileCheck):
         return self.exe_path
 
     def prepare(self, obj):
-        if not self.get_exe_path():
-            return None
-
         new = super(CheckCommand, self).prepare(obj)
+        if not new or not self.get_exe_path():
+            return None
         if not isinstance(obj, CommittedFile):
             return new
-
         if (
             new.extension and
             obj.get_extension() != new.extension and
@@ -245,7 +247,7 @@ class CheckCommandWithConfig(CheckCommand):
 
     def prepare(self, obj):
         new = super(CheckCommandWithConfig, self).prepare(obj)
-        if not isinstance(obj, Commit):
+        if not new or not isinstance(obj, Commit):
             return new
 
         prev_commit = new.config_file.commit

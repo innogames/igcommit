@@ -76,11 +76,18 @@ checks.append(file_checks.CheckCommand(
 ))
 
 # JavaScript
+jshint_check = file_checks.CheckCommandWithConfig(
+    ['jshint', '--reporter=unix', '/dev/stdin'],
+    extension='js',
+    config_name='.jshintrc',
+)
+checks.append(jshint_check)
 jscs_check = file_checks.CheckCommandWithConfig(
     ['jscs', '--max-errors=-1', '--reporter=unix'],
     extension='js',
     config_name='.jscs.json',
     config_required=True,
+    preferred_checks=[jshint_check],
 )
 checks.append(jscs_check)
 checks.append(file_checks.CheckCommand(

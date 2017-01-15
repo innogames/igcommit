@@ -42,8 +42,7 @@ Features
 * Check Python files with `flake8` or `pycodestyle` and `pyflakes`
 * Check Ruby files with `rubocop`
 * Check shell scripts with `shellcheck`
-* Check JavaScript files with `jscs` (requires `.jscs.json` on repository) or
-  `standard`
+* Check JavaScript files with `jshint`, `jscs`, or `standard`
 * Check PHP files with `phpcs`
 * Run the external check commands in parallel
 
@@ -81,6 +80,7 @@ configuration files has to be on the top level of the Git repository.
 | puppet-lint    | .puppet-lint.rc    | optional
 | flake8         | .flake8            | optional
 | jscs           | .jscs.json         | required
+| jshint         | .jshintrc          | optional
 | phpcs          | phpcs.xml          | optional but recommended
 
 Pros and Cons of Pre-receive Hook

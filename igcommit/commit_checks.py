@@ -12,10 +12,11 @@ class CommitCheck(BaseCheck):
     commit = None
 
     def prepare(self, obj):
-        if not isinstance(obj, Commit):
-            return super(CommitCheck, self).prepare(obj)
+        new = super(CommitCheck, self).prepare(obj)
+        if not new or not isinstance(obj, Commit):
+            return new
 
-        new = self.clone()
+        new = new.clone()
         new.commit = obj
         return new
 
