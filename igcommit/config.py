@@ -88,10 +88,24 @@ checks.append(CheckCommand(
 
 # JavaScript
 package_config = CommittedFile('package.json')
+eslint_check = CheckCommand(
+    ['eslint', '--format=unix', '--quite', '--stdin'],
+    extension='js',
+    config_files=[
+        package_config,
+        CommittedFile('.eslint.js'),
+        CommittedFile('.eslint.yaml'),
+        CommittedFile('.eslint.yml'),
+        CommittedFile('.eslint.json'),
+    ],
+    config_required=True,
+)
+checks.append(eslint_check)
 jshint_check = CheckCommand(
     ['jshint', '--reporter=unix', '/dev/stdin'],
     extension='js',
     config_files=[package_config, CommittedFile('.jshintrc')],
+    preferred_checks=[eslint_check],
 )
 checks.append(jshint_check)
 jscs_check = CheckCommand(
@@ -103,14 +117,14 @@ jscs_check = CheckCommand(
         CommittedFile('.jscs.json'),
     ],
     config_required=True,
-    preferred_checks=[jshint_check],
+    preferred_checks=[eslint_check, jshint_check],
 )
 checks.append(jscs_check)
 checks.append(CheckCommand(
     ['standard', '--stdin'],
     extension='js',
     header=2,
-    preferred_checks=[jscs_check],
+    preferred_checks=[eslint_check, jshint_check, jscs_check],
 ))
 
 # PHP

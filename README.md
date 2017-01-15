@@ -42,7 +42,7 @@ Features
 * Check Python files with `flake8` or `pycodestyle` and `pyflakes`
 * Check Ruby files with `rubocop`
 * Check shell scripts with `shellcheck`
-* Check JavaScript files with `jshint`, `jscs`, or `standard`
+* Check JavaScript files with `eslint`, `jshint`, `jscs`, or `standard`
 * Check PHP files with `phpcs`
 * Run the external check commands in parallel
 
@@ -75,14 +75,15 @@ The script itself is currently configuration free.  Though, some of the syntax
 checkers called by the script uses or requires configurations.  Those
 configuration files has to be on the top level of the Git repository.
 
-| Syntax Checker | Configuration File                   | Note
-|----------------|--------------------------------------|-----
-| puppet-lint    | .puppet-lint.rc                      | optional
-| flake8         | setup.cfg, tox.ini, or .flake8       | optional
-| pycodestyle    | setup.cfg, or tox.ini                | optional
-| jscs           | package.json, .jscsrc, or .jscs.json | required
-| jshint         | package.json, or .jshintrc           | optional
-| phpcs          | phpcs.xml, or phpcs.xml.dist         | optional
+| Syntax Checker | Configuration File                           | Note
+|----------------|----------------------------------------------|-----
+| puppet-lint    | .puppet-lint.rc                              | optional
+| flake8         | .flake8, setup.cfg, or tox.ini               | optional
+| pycodestyle    | setup.cfg, or tox.ini                        | optional
+| eslint         | eslint.(js|yaml|yml|json), or package.json   | required
+| jshint         | .jshintrc, or package.json                   | optional
+| jscs           | .jscsrc, .jscs.json, or package.json         | required
+| phpcs          | phpcs.xml, or phpcs.xml.dist                 | optional
 
 Pros and Cons of Pre-receive Hook
 --------------------------------
