@@ -116,7 +116,7 @@ class CheckCommand(CommmittedFileCheck):
     extension = None
     exe_path = None
     header = 0
-    config_file = None
+    config_files = []
     config_required = False
 
     def __init__(
@@ -124,7 +124,7 @@ class CheckCommand(CommmittedFileCheck):
         args=None,
         extension=None,
         header=0,
-        config_name=None,
+        config_files=[],
         config_required=False,
         **kwargs
     ):
@@ -134,8 +134,8 @@ class CheckCommand(CommmittedFileCheck):
             self.extension = extension
         if header:
             self.header = header
-        if config_name:
-            self.config_file = CommittedFile(None, config_name)
+        if config_files:
+            self.config_files = config_files
         if config_required:
             self.config_required = True
         super(CheckCommand, self).__init__(**kwargs)
@@ -148,8 +148,8 @@ class CheckCommand(CommmittedFileCheck):
             new.extension = self.extension
         if self.header:
             new.header = self.header
-        if self.config_file:
-            new.config_file = self.config_file
+        if self.config_files:
+            new.config_files = self.config_files
         if self.config_required:
             new.config_required = self.config_required
         if self.exe_path:
@@ -166,8 +166,8 @@ class CheckCommand(CommmittedFileCheck):
         if not new or not self.get_exe_path():
             return None
 
-        if isinstance(obj, Commit) and new.config_file:
-            config_exists = new.prepare_config(obj)
+        if isinstance(obj, Commit):
+            config_exists = new.prepare_configs(obj)
             if not config_exists and new.config_required:
                 return None
 
@@ -186,21 +186,24 @@ class CheckCommand(CommmittedFileCheck):
 
         return new
 
-    def prepare_config(self, commit):
-        prev_commit = self.config_file.commit
-        assert prev_commit != commit
-        self.config_file.commit = commit
+    def prepare_configs(self, commit):
+        config_exists = False
+        for config_file in self.config_files:
+            prev_commit = config_file.commit
+            config_file.commit = commit
 
-        if not self.config_file.exists():
-            return False
+            if not config_file.exists():
+                continue
+            config_exists = True
 
-        # If the file is not changed on this commit, we can skip
-        # downloading.
-        if (
-            not prev_commit or
-            prev_commit.commit_list != commit.commit_list or
-            self.config_file.changed()
-        ):
+            # If the file is not changed on this commit, we can skip
+            # downloading.
+            if (prev_commit and (prev_commit == commit or (
+                prev_commit.commit_list == commit.commit_list and
+                not config_file.changed()
+            ))):
+                continue
+
             # We have to download the configuration file to the current
             # workspace to let the command find it.  It is not really safe
             # to do that.  The workspace might not be a good place to write
@@ -208,9 +211,9 @@ class CheckCommand(CommmittedFileCheck):
             # changed on different commits, because we run the commands
             # in parallel.  We are ignoring those problems, until they
             # start happening on production.
-            self.config_file.write()
+            config_file.write()
 
-        return True
+        return config_exists
 
     def prepare_procs(self):
         self.content_proc = self.committed_file.get_content_proc()

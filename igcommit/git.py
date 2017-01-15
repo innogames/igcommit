@@ -112,7 +112,7 @@ class Commit(object):
                 assert line_split[0].startswith(':')
                 file_mode = line_split[1]
                 file_path = line_split[5]
-                changed_files.append(CommittedFile(self, file_path, file_mode))
+                changed_files.append(CommittedFile(file_path, self, file_mode))
             self.changed_files = changed_files
         return self.changed_files
 
@@ -120,9 +120,9 @@ class Commit(object):
 class CommittedFile(object):
     """Routines on a single committed file"""
 
-    def __init__(self, commit, path, mode=None):
-        self.commit = commit
+    def __init__(self, path, commit=None, mode=None):
         self.path = path
+        self.commit = commit
         self.mode = mode
         self.exe = None
         self.not_consumed_content_proc = None
@@ -133,8 +133,8 @@ class CommittedFile(object):
     def __eq__(self, other):
         return (
             isinstance(other, CommittedFile) and
-            self.commit == other.commit and
-            self.path == other.path
+            self.path == other.path and
+            self.commit == other.commit
         )
 
     def exists(self):

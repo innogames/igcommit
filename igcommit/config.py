@@ -4,31 +4,39 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
-from igcommit import commit_list_checks, commit_checks, file_checks
+from igcommit.commit_list_checks import (
+    CheckDuplicateCommitSummaries,
+    CheckMisleadingMergeCommit,
+)
+from igcommit.commit_checks import (
+    CheckCommitMessage,
+    CheckCommitSummary,
+    CheckCommitTags,
+    CheckChangedFilePaths,
+)
+from igcommit.file_checks import CheckExecutable, CheckCommand
+from igcommit.git import CommittedFile
 
 checks = []
 
 # Commit list checks
-checks.append(commit_list_checks.CheckDuplicateCommitSummaries())
-checks.append(commit_list_checks.CheckMisleadingMergeCommit())
+checks.append(CheckDuplicateCommitSummaries())
+checks.append(CheckMisleadingMergeCommit())
 
 # Commit checks
-checks.append(commit_checks.CheckCommitMessage())
-checks.append(commit_checks.CheckCommitSummary())
-checks.append(commit_checks.CheckCommitTags())
-checks.append(commit_checks.CheckChangedFilePaths())
+checks.append(CheckCommitMessage())
+checks.append(CheckCommitSummary())
+checks.append(CheckCommitTags())
+checks.append(CheckChangedFilePaths())
 
 # File meta checks
-checks.append(file_checks.CheckExecutable())
+checks.append(CheckExecutable())
 
 # Go
-checks.append(file_checks.CheckCommand(
-    ['golint', '/dev/stdin'],
-    extension='go',
-))
+checks.append(CheckCommand(['golint', '/dev/stdin'], extension='go'))
 
 # Puppet
-checks.append(file_checks.CheckCommand(
+checks.append(CheckCommand(
     [
         'puppet',
         'parser',
@@ -39,58 +47,66 @@ checks.append(file_checks.CheckCommand(
     ],
     extension='pp',
 ))
-checks.append(file_checks.CheckCommand(
+checks.append(CheckCommand(
     ['puppet-lint', '--no-autoloader_layout-check', '/dev/stdin'],
     extension='pp',
-    config_name='.puppet-lint.rc',
+    config_files=[CommittedFile('.puppet-lint.rc')],
 ))
 
 # Python
-flake8_check = file_checks.CheckCommand(
+setup_file = CommittedFile('setup.cfg')
+tox_file = CommittedFile('tox.ini')
+flake8_check = CheckCommand(
     ['flake8', '-'],
     extension='py',
-    config_name='.flake8',
+    config_files=[setup_file, tox_file, CommittedFile('.flake8')],
 )
 checks.append(flake8_check)
-checks.append(file_checks.CheckCommand(
+checks.append(CheckCommand(
     ['pycodestyle', '-'],
     extension='py',
+    config_files=[setup_file, tox_file],
     preferred_checks=[flake8_check],
 ))
-checks.append(file_checks.CheckCommand(
+checks.append(CheckCommand(
     ['pyflakes'],
     extension='py',
     preferred_checks=[flake8_check],
 ))
 
 # Ruby
-checks.append(file_checks.CheckCommand(
+checks.append(CheckCommand(
     ['rubocop', '--format=emacs', '--stdin', '/dev/stdin'],
     extension='rb',
 ))
 
 # Shell
-checks.append(file_checks.CheckCommand(
+checks.append(CheckCommand(
     ['shellcheck', '--format=gcc', '/dev/stdin'],
     extension='sh',
 ))
 
 # JavaScript
-jshint_check = file_checks.CheckCommand(
+package_config = CommittedFile('package.json')
+jshint_check = CheckCommand(
     ['jshint', '--reporter=unix', '/dev/stdin'],
     extension='js',
-    config_name='.jshintrc',
+    config_files=[package_config, CommittedFile('.jshintrc')],
 )
 checks.append(jshint_check)
-jscs_check = file_checks.CheckCommand(
+jscs_check = CheckCommand(
     ['jscs', '--max-errors=-1', '--reporter=unix'],
     extension='js',
-    config_name='.jscs.json',
+    config_files=[
+        package_config,
+        CommittedFile('.jscsrc'),
+        CommittedFile('.jscs.json'),
+    ],
     config_required=True,
     preferred_checks=[jshint_check],
 )
 checks.append(jscs_check)
-checks.append(file_checks.CheckCommand(
+checks.append(CheckCommand(
     ['standard', '--stdin'],
     extension='js',
     header=2,
@@ -98,8 +114,11 @@ checks.append(file_checks.CheckCommand(
 ))
 
 # PHP
-checks.append(file_checks.CheckCommand(
+checks.append(CheckCommand(
     ['phpcs', '-q', '--report=emacs'],
     extension='php',
-    config_name='phpcs.xml',
+    config_files=[
+        CommittedFile('phpcs.xml'),
+        CommittedFile('phpcs.xml.dist'),
+    ],
 ))

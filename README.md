@@ -75,13 +75,14 @@ The script itself is currently configuration free.  Though, some of the syntax
 checkers called by the script uses or requires configurations.  Those
 configuration files has to be on the top level of the Git repository.
 
-| Syntax Checker | Configuration File | Note
-|----------------|--------------------|-----
-| puppet-lint    | .puppet-lint.rc    | optional
-| flake8         | .flake8            | optional
-| jscs           | .jscs.json         | required
-| jshint         | .jshintrc          | optional
-| phpcs          | phpcs.xml          | optional but recommended
+| Syntax Checker | Configuration File                   | Note
+|----------------|--------------------------------------|-----
+| puppet-lint    | .puppet-lint.rc                      | optional
+| flake8         | setup.cfg, tox.ini, or .flake8       | optional
+| pycodestyle    | setup.cfg, or tox.ini                | optional
+| jscs           | package.json, .jscsrc, or .jscs.json | required
+| jshint         | package.json, or .jshintrc           | optional
+| phpcs          | phpcs.xml, or phpcs.xml.dist         | optional
 
 Pros and Cons of Pre-receive Hook
 --------------------------------
