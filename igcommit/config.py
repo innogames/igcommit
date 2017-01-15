@@ -21,6 +21,12 @@ checks.append(commit_checks.CheckChangedFilePaths())
 # File meta checks
 checks.append(file_checks.CheckExecutable())
 
+# Go
+checks.append(file_checks.CheckCommand(
+    ['golint', '/dev/stdin'],
+    extension='go',
+))
+
 # Puppet
 checks.append(file_checks.CheckCommand(
     [

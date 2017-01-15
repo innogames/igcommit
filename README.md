@@ -37,6 +37,7 @@ Features
 * Check for changed file paths
 * Accept commits tagged as `[HOTFIX]`, `[MESS]` or `[WIP]` with issues
 * Check executable bits and shebangs
+* Check Go files with `golint`
 * Check Puppet files with `puppet parser validate` and `puppet-lint`
 * Check Python files with `flake8` or `pycodestyle` and `pyflakes`
 * Check Ruby files with `rubocop`
