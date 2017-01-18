@@ -124,7 +124,7 @@ class CommittedFile(object):
         self.path = path
         self.commit = commit
         self.mode = mode
-        self.exe = None
+        self.shebang = None
         self.not_consumed_content_proc = None
 
     def __str__(self):
@@ -180,18 +180,28 @@ class CommittedFile(object):
         to be used later on checking the file content.  This is an optimistic
         approach that only works, if the first line is actually the shebang.
         """
-        assert self.not_consumed_content_proc is None
-        proc = self.get_content_proc()
-        line = proc.stdout.readline()
-        if line.startswith(b'#!'):
-            self.not_consumed_content_proc = proc
-            return line[len('#!'):].decode()
+        if self.shebang is None:
+            assert self.not_consumed_content_proc is None
+            proc = self.get_content_proc()
+            line = proc.stdout.readline()
+            if line.startswith(b'#!'):
+                self.not_consumed_content_proc = proc
+                self.shebang = line[len('#!'):].decode()
+            else:
+                self.shebang = ''
 
-        if proc.poll() not in (None, 0):
-            raise CalledProcessError(
-                'Git command returned non-zero exit status {}'
-                .format(proc.returncode)
-            )
+            if proc.poll() not in (None, 0):
+                raise CalledProcessError(
+                    'Git command returned non-zero exit status {}'
+                    .format(proc.returncode)
+                )
+        return self.shebang
+
+    def get_exe(self):
+        shebang_split = self.get_shebang().split(None, 2)
+        if shebang_split[0] == '/usr/bin/env' and len(shebang_split) > 1:
+            return shebang_split[1]
+        return shebang_split.rsplit('/', 1)[-1]
 
     def write(self):
         with open(self.path, 'wb') as fd:

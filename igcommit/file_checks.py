@@ -67,35 +67,30 @@ class CheckExecutable(CommmittedFileCheck):
             self.set_state(CheckState.failed)
             return
 
-        shebang_split = shebang.split(None, 2)
-        if shebang_split[0] == '/usr/bin/env':
-            if len(shebang_split) == 1:
+        path = shebang.split(None, 1)[0]
+        if not path.startswith('/'):
+            yield 'error: shebang executable {} is not full path'.format(path)
+            self.set_state(CheckState.failed)
+        elif path == '/usr/bin/env':
+            if shebang == path:
                 yield 'error: /usr/bin/env must have an argument'
                 self.set_state(CheckState.failed)
                 return
-            exe = shebang_split[1]
-        elif shebang_split[0].startswith('/'):
-            if shebang_split[0].startswith('/usr'):
-                yield 'warning: shebang is not portable (use /usr/bin/env)'
-            exe = shebang_split[0].rsplit('/', 1)[1]
-        else:
-            exe = shebang_split[0]
-            yield 'error: shebang executable {} is not full path'.format(exe)
-            self.set_state(CheckState.failed)
+        elif path.startswith('/usr'):
+            yield 'warning: shebang is not portable (use /usr/bin/env)'
 
-        # We are saving the executable name on the file to let it be used
-        # by the following checks.  TODO Make it more robust.
-        self.committed_file.exe = exe
-
-        if extension in file_extensions:
-            if not file_extensions[extension].search(exe):
+        if extension:
+            exe = self.committed_file.get_exe()
+            if (
+                extension in file_extensions and
+                not file_extensions[extension].search(exe)
+            ):
                 yield (
                     'error: shebang executable "{}" doesn\'t match '
                     'pattern "{}"'
                     .format(exe, file_extensions[extension].pattern)
                 )
                 self.set_state(CheckState.failed)
-        if extension:
             for key, pattern in file_extensions.items():
                 if pattern.search(exe) and key != extension:
                     yield (
@@ -177,8 +172,7 @@ class CheckCommand(CommmittedFileCheck):
                 obj.get_extension() != new.extension and
                 not (
                     new.extension in file_extensions and
-                    obj.exe and
-                    file_extensions[new.extension].search(obj.exe)
+                    file_extensions[new.extension].search(obj.get_exe())
                 )
             ):
                 return None
