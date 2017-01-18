@@ -80,26 +80,31 @@ class CheckExecutable(CommmittedFileCheck):
             yield 'warning: shebang is not portable (use /usr/bin/env)'
 
         if extension:
-            exe = self.committed_file.get_exe()
-            if (
-                extension in file_extensions and
-                not file_extensions[extension].search(exe)
-            ):
+            for problem in self.get_exe_problems(extension):
+                yield problem
+
+        self.set_state(CheckState.done)
+
+    def get_exe_problems(self, extension):
+        exe = self.committed_file.get_exe()
+        if (
+            extension in file_extensions and
+            not file_extensions[extension].search(exe)
+        ):
+            yield (
+                'error: shebang executable "{}" doesn\'t match '
+                'pattern "{}"'
+                .format(exe, file_extensions[extension].pattern)
+            )
+            self.set_state(CheckState.failed)
+        for key, pattern in file_extensions.items():
+            if pattern.search(exe) and key != extension:
                 yield (
-                    'error: shebang executable "{}" doesn\'t match '
-                    'pattern "{}"'
-                    .format(exe, file_extensions[extension].pattern)
+                    'error: shebang executable {} matches pattern of file '
+                    'extension ".{}"'
+                    .format(exe, key)
                 )
                 self.set_state(CheckState.failed)
-            for key, pattern in file_extensions.items():
-                if pattern.search(exe) and key != extension:
-                    yield (
-                        'error: shebang executable {} matches pattern of file '
-                        'extension ".{}"'
-                        .format(exe, key)
-                    )
-                    self.set_state(CheckState.failed)
-        self.set_state(CheckState.done)
 
     def __str__(self):
         return '{} on {}'.format(type(self).__name__, self.committed_file)

@@ -11,7 +11,6 @@ from igcommit.commit_list_checks import (
 from igcommit.commit_checks import (
     CheckCommitMessage,
     CheckCommitSummary,
-    CheckCommitTags,
     CheckChangedFilePaths,
 )
 from igcommit.file_checks import CheckExecutable, CheckCommand
@@ -26,7 +25,6 @@ checks.append(CheckMisleadingMergeCommit())
 # Commit checks
 checks.append(CheckCommitMessage())
 checks.append(CheckCommitSummary())
-checks.append(CheckCommitTags())
 checks.append(CheckChangedFilePaths())
 
 # File meta checks

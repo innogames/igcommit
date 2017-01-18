@@ -41,59 +41,7 @@ class CheckCommitMessage(CommitCheck):
 
 
 class CheckCommitSummary(CommitCheck):
-    def get_problems(self):
-        tags, rest = self.commit.parse_tags()
-        if '  ' in rest:
-            yield 'warning: multiple spaces'
-
-        if rest.startswith('['):
-            yield 'warning: not terminated commit tags'
-        if tags:
-            if not rest.startswith(' '):
-                yield 'warning: commit tags not separated with space'
-            rest = rest[1:]
-
-        if rest.startswith('Revert'):
-            rest = rest[len('Revert'):]
-            if not rest.startswith(' "') or not rest.endswith('"'):
-                yield 'warning: ill-formatted revert commit'
-            self.set_state(CheckState.done)
-            return
-
-        if len(rest) > 72:
-            yield 'warning: summary longer than 72 characters'
-
-        if ':' in rest[:24]:
-            category, rest = rest.split(':', 1)
-            if not category[0].isalpha():
-                yield 'warning: commit category start with non-letter'
-            if category != category.lower():
-                yield 'warning: commit category has upper-case letter'
-            if not rest.startswith(' '):
-                yield 'warning: commit category not separated with space'
-            rest = rest[1:]
-
-        if not rest:
-            yield 'error: no summary'
-            self.set_state(CheckState.failed)
-            return
-
-        if not rest[0].isalpha():
-            yield 'warning: summary start with non-letter'
-        if rest[-1] == '.':
-            yield 'warning: summary ends with a dot'
-
-        first_word = rest.split(' ', 1)[0]
-        if first_word.endswith('ed'):
-            yield 'warning: past tense used on summary'
-        if first_word.endswith('ing'):
-            yield 'warning: continuous tense used on summary'
-        self.set_state(CheckState.done)
-
-
-class CheckCommitTags(CommitCheck):
-    """Check the tags on the commit summaries"""
-    tags = {
+    commit_tags = {
         'BUGFIX',
         'CLEANUP',
         'FEATURE',
@@ -109,19 +57,83 @@ class CheckCommitTags(CommitCheck):
     }
 
     def get_problems(self):
+        tags, rest = self.commit.parse_tags()
+        if rest.startswith('['):
+            yield 'warning: not terminated commit tags'
+        if tags:
+            for problem in self.get_commit_tag_problems(tags, rest):
+                yield problem
+            rest = rest[1:]
+
+        if rest.startswith('Revert'):
+            for problem in self.get_revert_commit_problems(rest):
+                yield problem
+            return
+
+        if ':' in rest[:24]:
+            for problem in self.get_commit_category_problems(rest):
+                yield problem
+            rest = rest[(rest.index(':') + 1):]
+
+        for problem in self.get_summary_problems(rest):
+            yield problem
+
+        self.set_state(CheckState.done)
+
+    def get_revert_commit_problems(self, rest):
+        rest = rest[len('Revert'):]
+        if not rest.startswith(' "') or not rest.endswith('"'):
+            yield 'warning: ill-formatted revert commit'
+        self.set_state(CheckState.done)
+
+    def get_commit_tag_problems(self, tags, rest):
         used_tags = []
-        for tag in self.commit.parse_tags()[0]:
+        for tag in tags:
             tag_upper = tag.upper()
             if tag != tag_upper:
                 yield 'error: commit tag [{}] not upper-case'.format(tag)
                 self.set_state(CheckState.failed)
-            if tag_upper not in CheckCommitTags.tags:
+            if tag_upper not in CheckCommitSummary.commit_tags:
                 yield 'warning: commit tag [{}] not on list'.format(tag)
             if tag_upper in used_tags:
                 yield 'error: duplicate commit tag [{}]'.format(tag)
                 self.set_state(CheckState.failed)
             used_tags.append(tag_upper)
-        self.set_state(CheckState.done)
+
+        if not rest.startswith(' '):
+            yield 'warning: commit tags not separated with space'
+
+    def get_commit_category_problems(self, rest):
+        category, rest = rest.split(':', 1)
+        if not category[0].isalpha():
+            yield 'warning: commit category start with non-letter'
+        if category != category.lower():
+            yield 'warning: commit category has upper-case letter'
+        if not rest.startswith(' '):
+            yield 'warning: commit category not separated with space'
+
+    def get_summary_problems(self, rest):
+        if not rest:
+            yield 'error: no summary'
+            self.set_state(CheckState.failed)
+            return
+
+        if len(rest) > 72:
+            yield 'warning: summary longer than 72 characters'
+
+        if '  ' in rest:
+            yield 'warning: multiple spaces'
+
+        if not rest[0].isalpha():
+            yield 'warning: summary start with non-letter'
+        if rest[-1] == '.':
+            yield 'warning: summary ends with a dot'
+
+        first_word = rest.split(' ', 1)[0]
+        if first_word.endswith('ed'):
+            yield 'warning: past tense used on summary'
+        if first_word.endswith('ing'):
+            yield 'warning: continuous tense used on summary'
 
 
 class CheckChangedFilePaths(CommitCheck):
