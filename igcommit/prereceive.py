@@ -5,7 +5,6 @@ Copyright (c) 2016, InnoGames GmbH
 
 from collections import defaultdict
 from fileinput import input
-from time import sleep
 from traceback import print_exc
 
 from igcommit.base_check import CheckState, prepare_checks
@@ -28,10 +27,9 @@ class Runner(object):
         # way externally, anyway.  We only have a limit to avoid consuming
         # too many processes.
         for check in iter_buffer(self.expand_checks(checks), 16):
-            if check:
-                check.print_problems()
-                assert check.state >= CheckState.done
-                state = max(state, check.state)
+            check.print_problems()
+            assert check.state >= CheckState.done
+            state = max(state, check.state)
 
         return state
 
@@ -86,7 +84,6 @@ class Runner(object):
             # Wait for the check to run
             while check.state < CheckState.done:
                 yield None
-                sleep(0.1)
             if check.state >= CheckState.failed:
                 return
 

@@ -17,8 +17,11 @@ def iter_buffer(iterable, amount):
     assert amount > 1
     memo = []
     for elem in iterable:
-        if len(memo) >= amount:
-            yield memo.pop(0)
-        memo.append(elem)
+        if elem is not None:
+            memo.append(elem)
+            if len(memo) < amount:
+                continue
+        yield memo.pop(0)
+
     for elem in memo:
         yield elem
