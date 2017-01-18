@@ -203,7 +203,7 @@ class CommittedFile(object):
             return ''
         if shebang_split[0] == '/usr/bin/env' and len(shebang_split) > 1:
             return shebang_split[1]
-        return shebang_split.rsplit('/', 1)[-1]
+        return shebang_split[0].rsplit('/', 1)[-1]
 
     def write(self):
         with open(self.path, 'wb') as fd:
