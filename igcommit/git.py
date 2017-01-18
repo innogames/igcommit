@@ -199,6 +199,8 @@ class CommittedFile(object):
 
     def get_exe(self):
         shebang_split = self.get_shebang().split(None, 2)
+        if not shebang_split:
+            return ''
         if shebang_split[0] == '/usr/bin/env' and len(shebang_split) > 1:
             return shebang_split[1]
         return shebang_split.rsplit('/', 1)[-1]
