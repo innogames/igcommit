@@ -100,11 +100,10 @@ class CheckExecutable(CommmittedFileCheck):
         for key, pattern in file_extensions.items():
             if pattern.search(exe) and key != extension:
                 yield (
-                    'error: shebang executable {} matches pattern of file '
+                    'warning: shebang executable {} matches pattern of file '
                     'extension ".{}"'
                     .format(exe, key)
                 )
-                self.set_state(CheckState.failed)
 
     def __str__(self):
         return '{} on {}'.format(type(self).__name__, self.committed_file)
