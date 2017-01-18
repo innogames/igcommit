@@ -172,6 +172,7 @@ class CheckCommand(CommmittedFileCheck):
                 obj.get_extension() != new.extension and
                 not (
                     new.extension in file_extensions and
+                    obj.owner_can_execute() and
                     file_extensions[new.extension].search(obj.get_exe())
                 )
             ):
