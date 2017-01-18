@@ -4,6 +4,8 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
+from sys import exit
+
 from igcommit.prereceive import main
 
-main()
+exit(main())

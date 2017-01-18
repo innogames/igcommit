@@ -6,6 +6,7 @@ Copyright (c) 2016, InnoGames GmbH
 from collections import defaultdict
 from fileinput import input
 from time import sleep
+from traceback import print_exc
 
 from igcommit.base_check import CheckState, prepare_checks
 from igcommit.config import checks
@@ -15,11 +16,12 @@ from igcommit.utils import iter_buffer
 
 class Runner(object):
     def __init__(self):
-        self.state = CheckState.new
         self.checked_commit_ids = set()
         self.changed_file_checks = defaultdict(list)
 
     def run(self):
+        state = CheckState.new
+
         # We are buffering the checks to let them run parallel in
         # the background.  Parallelization only applies to the CheckCommands.
         # It has no overhead, because we have to run those commands the same
@@ -29,10 +31,9 @@ class Runner(object):
             if check:
                 check.print_problems()
                 assert check.state >= CheckState.done
-                self.state = max(self.state, check.state)
+                state = max(state, check.state)
 
-        if self.state >= CheckState.failed:
-            raise SystemExit('Checks failed')
+        return state
 
     def expand_checks(self, checks):
         next_checks = []
@@ -95,4 +96,12 @@ class Runner(object):
 
 
 def main():
-    Runner().run()
+    try:
+        state = Runner().run()
+    except:
+        print_exc()
+    else:
+        if state >= CheckState.failed:
+            return 1
+
+    return 0
