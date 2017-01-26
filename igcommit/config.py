@@ -30,6 +30,13 @@ checks.append(CheckChangedFilePaths())
 # File meta checks
 checks.append(CheckExecutable())
 
+# CSS
+checks.append(CheckCommand(
+    ['csslint', '--format=compact', '/dev/stdin'],
+    extension='css',
+    config_files=[CommittedFile('.csslintrc')],
+))
+
 # Go
 checks.append(CheckCommand(['golint', '/dev/stdin'], extension='go'))
 

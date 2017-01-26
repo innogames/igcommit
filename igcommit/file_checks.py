@@ -255,8 +255,23 @@ class CheckCommand(CommmittedFileCheck):
             line_split[1].isdigit() and
             line_split[2].isdigit()
         ):
-            prefix = 'line {} col {}: '.format(*line_split[1:3])
+            prefix = 'line {}: col {}: '.format(*line_split[1:3])
             line = line_split[3].strip()
+        else:
+            if len(line_split) >= 2 and 'stdin' in line_split[0].lower():
+                line = ':'.join(line_split[1:]).strip()
+            if line.startswith('line '):
+                line_split = line.split(' ', 2)
+                line_num = line_split[1].strip(':,')
+                if line_num.isdigit():
+                    prefix += 'line ' + line_num + ': '
+                    line = ' '.join(line_split[2:]).strip(':,')
+            if line.startswith('col '):
+                line_split = line.split(' ', 2)
+                col_num = line_split[1].strip(':,')
+                if col_num.isdigit():
+                    prefix += 'col ' + col_num + ': '
+                    line = ' '.join(line_split[2:]).strip(':,')
 
         for severity in ['info', 'warning', 'error']:
             if line.lower().startswith(severity):
