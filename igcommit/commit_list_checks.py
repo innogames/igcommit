@@ -61,8 +61,7 @@ class CheckMisleadingMergeCommit(CommitListCheck):
         for commit in self.commit_list:
             summary = commit.get_summary()
             if summary.startswith(self.merge_template.format(ref_name)):
-                yield 'error: merge commit to itself'
-                self.set_state(CheckState.failed)
+                yield 'warning: merge commit to itself'
             elif summary.startswith(self.merge_template.format('master')):
                 yield 'warning: merge commit master'
         self.set_state(CheckState.done)
