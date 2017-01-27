@@ -70,10 +70,12 @@ class CheckCommitSummary(CommitCheck):
                 yield problem
             return
 
-        if ':' in rest[:24]:
-            for problem in self.get_commit_category_problems(rest):
+        category_index = rest[:24].find(': ')
+        rest_index = category_index + len(': ')
+        if category_index >= 0 and len(rest) > rest_index:
+            for problem in self.get_category_problems(rest[:category_index]):
                 yield problem
-            rest = rest[(rest.index(':') + 1):]
+            rest = rest[rest_index:]
 
         for problem in self.get_summary_problems(rest):
             yield problem
@@ -103,14 +105,13 @@ class CheckCommitSummary(CommitCheck):
         if not rest.startswith(' '):
             yield 'warning: commit tags not separated with space'
 
-    def get_commit_category_problems(self, rest):
-        category, rest = rest.split(':', 1)
+    def get_category_problems(self, category):
         if not category[0].isalpha():
-            yield 'warning: commit category start with non-letter'
+            yield 'warning: commit category starts with non-letter'
         if category != category.lower():
             yield 'warning: commit category has upper-case letter'
-        if not rest.startswith(' '):
-            yield 'warning: commit category not separated with space'
+        if category[-1] == ' ':
+            yield 'warning: commit category ends with a space'
 
     def get_summary_problems(self, rest):
         if not rest:
