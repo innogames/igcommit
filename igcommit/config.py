@@ -40,6 +40,14 @@ checks.append(CheckCommand(
 # Go
 checks.append(CheckCommand(['golint', '/dev/stdin'], extension='go'))
 
+# HTML
+checks.append(CheckCommand(
+    ['htmlhint', '--format=unix', '/dev/stdin'],
+    extension='html',
+    footer=2,
+    config_files=[CommittedFile('.htmlhintrc')],
+))
+
 # Puppet
 checks.append(CheckCommand(
     [

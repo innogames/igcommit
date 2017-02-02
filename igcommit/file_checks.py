@@ -115,6 +115,7 @@ class CheckCommand(CommmittedFileCheck):
     extension = None
     exe_path = None
     header = 0
+    footer = 0
     config_files = []
     config_required = False
 
@@ -122,9 +123,10 @@ class CheckCommand(CommmittedFileCheck):
         self,
         args=None,
         extension=None,
-        header=0,
-        config_files=[],
-        config_required=False,
+        header=None,
+        footer=None,
+        config_files=None,
+        config_required=None,
         **kwargs
     ):
         if args:
@@ -133,6 +135,8 @@ class CheckCommand(CommmittedFileCheck):
             self.extension = extension
         if header:
             self.header = header
+        if footer:
+            self.footer = footer
         if config_files:
             self.config_files = config_files
         if config_required:
@@ -147,6 +151,8 @@ class CheckCommand(CommmittedFileCheck):
             new.extension = self.extension
         if self.header:
             new.header = self.header
+        if self.footer:
+            new.footer = self.footer
         if self.config_files:
             new.config_files = self.config_files
         if self.config_required:
@@ -225,9 +231,14 @@ class CheckCommand(CommmittedFileCheck):
         self.content_proc.stdout.close()   # Allow it to receive a SIGPIPE
 
     def get_problems(self):
+        line_buffer = []
         for line_id, line in enumerate(self.check_proc.stdout):
-            if line_id >= self.header:
-                yield self._format_problem(line.strip().decode())
+            if line_id < self.header:
+                continue
+            line_buffer.append(line)
+            if len(line_buffer) <= self.footer:
+                continue
+            yield self._format_problem(line_buffer.pop(0).strip().decode())
 
         if self.content_proc.poll() != 0:
             raise CalledProcessError(

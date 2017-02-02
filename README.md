@@ -39,6 +39,7 @@ Features
 * Check executable bits and shebangs
 * Check CSS files with `csslint`
 * Check Go files with `golint`
+* Check HTML files with `htmlhint`
 * Check Puppet files with `puppet parser validate` and `puppet-lint`
 * Check Python files with `flake8` or `pycodestyle` and `pyflakes`
 * Check Ruby files with `rubocop`
@@ -79,6 +80,7 @@ configuration files has to be on the top level of the Git repository.
 | Syntax Checker | Configuration File                               | Note
 |----------------|--------------------------------------------------|-----
 | `csslint`      | `.csslintrc`                                     | optional
+| `htmlhint`     | `.htmlhintrc`                                    | optional
 | `puppet-lint`  | `.puppet-lint.rc`                                | optional
 | `flake8`       | `.flake8`, `setup.cfg`, or `tox.ini`             | optional
 | `pycodestyle`  | `setup.cfg`, or `tox.ini`                        | optional
