@@ -32,17 +32,20 @@ checks.append(CheckExecutable())
 
 # CSS
 checks.append(CheckCommand(
-    ['csslint', '--format=compact', '/dev/stdin'],
+    args=['csslint', '--format=compact', '/dev/stdin'],
     extension='css',
     config_files=[CommittedFile('.csslintrc')],
 ))
 
 # Go
-checks.append(CheckCommand(['golint', '/dev/stdin'], extension='go'))
+checks.append(CheckCommand(
+    args=['golint', '/dev/stdin'],
+    extension='go',
+))
 
 # HTML
 checks.append(CheckCommand(
-    ['htmlhint', '--format=unix', '/dev/stdin'],
+    args=['htmlhint', '--format=unix', '/dev/stdin'],
     extension='html',
     footer=2,
     config_files=[CommittedFile('.htmlhintrc')],
@@ -50,7 +53,7 @@ checks.append(CheckCommand(
 
 # Puppet
 checks.append(CheckCommand(
-    [
+    args=[
         'puppet',
         'parser',
         'validate',
@@ -61,7 +64,7 @@ checks.append(CheckCommand(
     extension='pp',
 ))
 checks.append(CheckCommand(
-    ['puppet-lint', '--no-autoloader_layout-check', '/dev/stdin'],
+    args=['puppet-lint', '--no-autoloader_layout-check', '/dev/stdin'],
     extension='pp',
     config_files=[CommittedFile('.puppet-lint.rc')],
 ))
@@ -70,39 +73,39 @@ checks.append(CheckCommand(
 setup_file = CommittedFile('setup.cfg')
 tox_file = CommittedFile('tox.ini')
 flake8_check = CheckCommand(
-    ['flake8', '-'],
+    args=['flake8', '-'],
     extension='py',
     config_files=[setup_file, tox_file, CommittedFile('.flake8')],
 )
 checks.append(flake8_check)
 checks.append(CheckCommand(
-    ['pycodestyle', '-'],
+    args=['pycodestyle', '-'],
     extension='py',
     config_files=[setup_file, tox_file],
     preferred_checks=[flake8_check],
 ))
 checks.append(CheckCommand(
-    ['pyflakes'],
+    args=['pyflakes'],
     extension='py',
     preferred_checks=[flake8_check],
 ))
 
 # Ruby
 checks.append(CheckCommand(
-    ['rubocop', '--format=emacs', '--stdin', '/dev/stdin'],
+    args=['rubocop', '--format=emacs', '--stdin', '/dev/stdin'],
     extension='rb',
 ))
 
 # Shell
 checks.append(CheckCommand(
-    ['shellcheck', '--format=gcc', '/dev/stdin'],
+    args=['shellcheck', '--format=gcc', '/dev/stdin'],
     extension='sh',
 ))
 
 # JavaScript
 package_config = CommittedFile('package.json')
 eslint_check = CheckCommand(
-    ['eslint', '--format=unix', '--quite', '--stdin'],
+    args=['eslint', '--format=unix', '--quite', '--stdin'],
     extension='js',
     config_files=[
         package_config,
@@ -115,14 +118,14 @@ eslint_check = CheckCommand(
 )
 checks.append(eslint_check)
 jshint_check = CheckCommand(
-    ['jshint', '--reporter=unix', '/dev/stdin'],
+    args=['jshint', '--reporter=unix', '/dev/stdin'],
     extension='js',
     config_files=[package_config, CommittedFile('.jshintrc')],
     preferred_checks=[eslint_check],
 )
 checks.append(jshint_check)
 jscs_check = CheckCommand(
-    ['jscs', '--max-errors=-1', '--reporter=unix'],
+    args=['jscs', '--max-errors=-1', '--reporter=unix'],
     extension='js',
     config_files=[
         package_config,
@@ -134,7 +137,7 @@ jscs_check = CheckCommand(
 )
 checks.append(jscs_check)
 checks.append(CheckCommand(
-    ['standard', '--stdin'],
+    args=['standard', '--stdin'],
     extension='js',
     header=2,
     preferred_checks=[eslint_check, jshint_check, jscs_check],
@@ -142,7 +145,7 @@ checks.append(CheckCommand(
 
 # PHP
 checks.append(CheckCommand(
-    ['phpcs', '-q', '--report=emacs'],
+    args=['phpcs', '-q', '--report=emacs'],
     extension='php',
     config_files=[
         CommittedFile('phpcs.xml'),

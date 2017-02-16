@@ -21,14 +21,16 @@ class BaseCheck(object):
     preferred_checks = []
     state = CheckState.new
 
-    def __init__(self, preferred_checks=None):
-        if preferred_checks:
-            self.preferred_checks = preferred_checks
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            # We expect all of the arguments to be initialized with defaults
+            # on the class.
+            assert hasattr(type(self), key)
+            if value:
+                setattr(self, key, value)
 
     def clone(self):
-        new = type(self)()
-        if self.preferred_checks:
-            new.preferred_checks = self.preferred_checks
+        new = type(self)(**vars(self))
         new.state = CheckState.cloned
         return new
 

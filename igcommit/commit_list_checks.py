@@ -30,7 +30,6 @@ class CheckDuplicateCommitSummaries(CommitListCheck):
     on the beginning of other ones.  This covers summaries like "Fix the bug"
     and "Fix the bug really" which is common bad practice for some reason.
     """
-
     def prepare(self, obj):
         if isinstance(obj, CommitList) and len(obj) <= 1:
             return None

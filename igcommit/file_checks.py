@@ -119,48 +119,6 @@ class CheckCommand(CommmittedFileCheck):
     config_files = []
     config_required = False
 
-    def __init__(
-        self,
-        args=None,
-        extension=None,
-        header=None,
-        footer=None,
-        config_files=None,
-        config_required=None,
-        **kwargs
-    ):
-        if args:
-            self.args = args
-        if extension:
-            self.extension = extension
-        if header:
-            self.header = header
-        if footer:
-            self.footer = footer
-        if config_files:
-            self.config_files = config_files
-        if config_required:
-            self.config_required = True
-        super(CheckCommand, self).__init__(**kwargs)
-
-    def clone(self):
-        new = super(CheckCommand, self).clone()
-        if self.args:
-            new.args = self.args
-        if self.extension:
-            new.extension = self.extension
-        if self.header:
-            new.header = self.header
-        if self.footer:
-            new.footer = self.footer
-        if self.config_files:
-            new.config_files = self.config_files
-        if self.config_required:
-            new.config_required = self.config_required
-        if self.exe_path:
-            new.exe_path = self.exe_path
-        return new
-
     def get_exe_path(self):
         if not self.exe_path:
             self.exe_path = get_exe_path(self.args[0])
