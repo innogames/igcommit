@@ -284,7 +284,7 @@ class CheckCommand(CommmittedFileCheck):
                     prefix += 'col ' + col_num + ': '
                     line = ' '.join(line_split[2:]).strip(':,')
 
-        for severity in ['info', 'warning', 'error']:
+        for severity in ['info', 'note', 'warning', 'error']:
             if line.lower().startswith(severity):
                 prefix = severity + ': ' + prefix
                 line = line[len(severity):].strip(' :-')
