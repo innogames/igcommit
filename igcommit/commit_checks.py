@@ -29,15 +29,15 @@ class CheckCommitMessage(CommitCheck):
         for line_id, line in enumerate(self.commit.get_message().splitlines()):
             if line_id == 1 and line:
                 yield 'error: summary extends the first line'
-                self.set_state(CheckState.failed)
+                self.set_state(CheckState.FAILED)
             if line and line[-1] == ' ':
                 yield 'error: line {}: trailing space'.format(line_id + 1)
-                self.set_state(CheckState.failed)
+                self.set_state(CheckState.FAILED)
             if line_id > 1 and line.startswith('    ') or line.startswith('>'):
                 continue
             if len(line) >= 80:
                 yield 'warning: line {}: longer than 80'.format(line_id + 1)
-        self.set_state(CheckState.done)
+        self.set_state(CheckState.DONE)
 
 
 class CheckCommitSummary(CommitCheck):
@@ -80,13 +80,13 @@ class CheckCommitSummary(CommitCheck):
         for problem in self.get_summary_problems(rest):
             yield problem
 
-        self.set_state(CheckState.done)
+        self.set_state(CheckState.DONE)
 
     def get_revert_commit_problems(self, rest):
         rest = rest[len('Revert'):]
         if not rest.startswith(' "') or not rest.endswith('"'):
             yield 'warning: ill-formatted revert commit'
-        self.set_state(CheckState.done)
+        self.set_state(CheckState.DONE)
 
     def get_commit_tag_problems(self, tags, rest):
         used_tags = []
@@ -94,12 +94,12 @@ class CheckCommitSummary(CommitCheck):
             tag_upper = tag.upper()
             if tag != tag_upper:
                 yield 'error: commit tag [{}] not upper-case'.format(tag)
-                self.set_state(CheckState.failed)
+                self.set_state(CheckState.FAILED)
             if tag_upper not in CheckCommitSummary.commit_tags:
                 yield 'warning: commit tag [{}] not on list'.format(tag)
             if tag_upper in used_tags:
                 yield 'error: duplicate commit tag [{}]'.format(tag)
-                self.set_state(CheckState.failed)
+                self.set_state(CheckState.FAILED)
             used_tags.append(tag_upper)
 
         if not rest.startswith(' '):
@@ -116,7 +116,7 @@ class CheckCommitSummary(CommitCheck):
     def get_summary_problems(self, rest):
         if not rest:
             yield 'error: no summary'
-            self.set_state(CheckState.failed)
+            self.set_state(CheckState.FAILED)
             return
 
         if len(rest) > 72:
@@ -147,5 +147,5 @@ class CheckChangedFilePaths(CommitCheck):
                 changed_file.path != changed_file.path.lower()
             ):
                 yield 'error: {} has upper case'.format(changed_file)
-                self.set_state(CheckState.failed)
-        self.set_state(CheckState.done)
+                self.set_state(CheckState.FAILED)
+        self.set_state(CheckState.DONE)

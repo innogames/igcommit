@@ -3,12 +3,14 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
+from enum import IntEnum
 
-class CheckState(object):
-    new = 0
-    cloned = 1
-    done = 2
-    failed = 3
+
+class CheckState(IntEnum):
+    NEW = 0
+    CLONED = 1
+    DONE = 2
+    FAILED = 3
 
 
 class BaseCheck(object):
@@ -19,7 +21,7 @@ class BaseCheck(object):
     methods to clone the check.
     """
     preferred_checks = []
-    state = CheckState.new
+    state = CheckState.NEW
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -31,11 +33,11 @@ class BaseCheck(object):
 
     def clone(self):
         new = type(self)(**vars(self))
-        new.state = CheckState.cloned
+        new.state = CheckState.CLONED
         return new
 
     def set_state(self, state):
-        assert state > CheckState.cloned
+        assert state > CheckState.CLONED
         self.state = max(self.state, state)
 
     def prepare(self, obj):
@@ -67,7 +69,7 @@ def prepare_checks(checks, obj, next_checks=None):
     for check in checks:
         prepared_check = check.prepare(obj)
         if prepared_check:
-            cloned = prepared_check.state >= CheckState.cloned
+            cloned = prepared_check.state >= CheckState.CLONED
             assert next_checks is not None or cloned
 
             if cloned:

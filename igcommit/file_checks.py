@@ -64,17 +64,17 @@ class CheckExecutable(CommmittedFileCheck):
         shebang = self.committed_file.get_shebang()
         if not shebang:
             yield 'error: no shebang'
-            self.set_state(CheckState.failed)
+            self.set_state(CheckState.FAILED)
             return
 
         path = shebang.split(None, 1)[0]
         if not path.startswith('/'):
             yield 'error: shebang executable {} is not full path'.format(path)
-            self.set_state(CheckState.failed)
+            self.set_state(CheckState.FAILED)
         elif path == '/usr/bin/env':
             if shebang == path:
                 yield 'error: /usr/bin/env must have an argument'
-                self.set_state(CheckState.failed)
+                self.set_state(CheckState.FAILED)
                 return
         elif path.startswith('/usr'):
             yield 'warning: shebang is not portable (use /usr/bin/env)'
@@ -83,7 +83,7 @@ class CheckExecutable(CommmittedFileCheck):
             for problem in self.get_exe_problems(extension):
                 yield problem
 
-        self.set_state(CheckState.done)
+        self.set_state(CheckState.DONE)
 
     def get_exe_problems(self, extension):
         exe = self.committed_file.get_exe()
@@ -96,7 +96,7 @@ class CheckExecutable(CommmittedFileCheck):
                 'pattern "{}"'
                 .format(exe, file_extensions[extension].pattern)
             )
-            self.set_state(CheckState.failed)
+            self.set_state(CheckState.FAILED)
         for key, pattern in file_extensions.items():
             if pattern.search(exe) and key != extension:
                 yield (
@@ -207,9 +207,9 @@ class CheckCommand(CommmittedFileCheck):
             self.check_proc.wait() != 0 and
             not self.committed_file.commit.content_can_fail()
         ):
-            self.set_state(CheckState.failed)
+            self.set_state(CheckState.FAILED)
         else:
-            self.set_state(CheckState.done)
+            self.set_state(CheckState.DONE)
 
     def _format_problem(self, line):
         """We are piping the source from Git to the commands.  We want to

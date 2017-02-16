@@ -121,7 +121,8 @@ still a good idea, even with the pre-receive hook.
 Dependencies
 ------------
 
-The script has no dependencies other than Python 2.7, 3.3 or above.  It runs
+The script has no dependencies on Python 3.4 or above.  It runs on Python 2
+as well with the backport of enum library "enum34".  The script executes
 the validation commands using the shell.  The necessary ones for checked
 repositories need to be installed separately.  See the complete list of
 commands on the [config.py](igcommit/config.py).  The commands which are not

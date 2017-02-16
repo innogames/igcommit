@@ -47,9 +47,9 @@ class CheckDuplicateCommitSummaries(CommitListCheck):
                     min(duplicate_summaries, key=len),
                     len(duplicate_summaries),
                 )
-                self.set_state(CheckState.failed)
+                self.set_state(CheckState.FAILED)
             duplicate_summaries = [summary]
-        self.set_state(CheckState.done)
+        self.set_state(CheckState.DONE)
 
 
 class CheckMisleadingMergeCommit(CommitListCheck):
@@ -63,4 +63,4 @@ class CheckMisleadingMergeCommit(CommitListCheck):
                 yield 'warning: merge commit to itself'
             elif summary.startswith(self.merge_template.format('master')):
                 yield 'warning: merge commit master'
-        self.set_state(CheckState.done)
+        self.set_state(CheckState.DONE)
