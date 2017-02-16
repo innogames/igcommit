@@ -6,11 +6,11 @@ Copyright (c) 2016, InnoGames GmbH
 from re import compile
 from subprocess import CalledProcessError, Popen, PIPE, STDOUT
 
-from igcommit.base_check import CheckState, BaseCheck
+from igcommit.base_check import BaseCheck, CheckState, Severity
 from igcommit.git import Commit, CommittedFile
 from igcommit.utils import get_exe_path
 
-file_extensions = {
+FILE_EXTENSIONS = {
     'php': compile('^php'),
     'pp': compile('^puppet'),
     'py': compile('^python'),
@@ -59,49 +59,48 @@ class CheckExecutable(CommmittedFileCheck):
     def get_problems(self):
         extension = self.committed_file.get_extension()
         if extension == 'sh':
-            yield 'warning: executable has file extension .sh'
+            yield Severity.WARNING, 'executable has file extension .sh'
 
         shebang = self.committed_file.get_shebang()
         if not shebang:
-            yield 'error: no shebang'
-            self.set_state(CheckState.FAILED)
+            yield Severity.ERROR, 'no shebang'
             return
 
         path = shebang.split(None, 1)[0]
         if not path.startswith('/'):
-            yield 'error: shebang executable {} is not full path'.format(path)
-            self.set_state(CheckState.FAILED)
+            yield (
+                Severity.ERROR,
+                'shebang executable {} is not full path'.format(path)
+            )
         elif path == '/usr/bin/env':
             if shebang == path:
-                yield 'error: /usr/bin/env must have an argument'
-                self.set_state(CheckState.FAILED)
+                yield Severity.ERROR, '/usr/bin/env must have an argument'
                 return
         elif path.startswith('/usr'):
-            yield 'warning: shebang is not portable (use /usr/bin/env)'
+            yield (
+                Severity.WARNING, 'shebang is not portable (use /usr/bin/env)'
+            )
 
         if extension:
             for problem in self.get_exe_problems(extension):
                 yield problem
 
-        self.set_state(CheckState.DONE)
-
     def get_exe_problems(self, extension):
         exe = self.committed_file.get_exe()
         if (
-            extension in file_extensions and
-            not file_extensions[extension].search(exe)
+            extension in FILE_EXTENSIONS and
+            not FILE_EXTENSIONS[extension].search(exe)
         ):
             yield (
-                'error: shebang executable "{}" doesn\'t match '
-                'pattern "{}"'
-                .format(exe, file_extensions[extension].pattern)
+                Severity.ERROR,
+                'shebang executable "{}" doesn\'t match pattern "{}"'
+                .format(exe, FILE_EXTENSIONS[extension].pattern)
             )
-            self.set_state(CheckState.FAILED)
-        for key, pattern in file_extensions.items():
+        for key, pattern in FILE_EXTENSIONS.items():
             if pattern.search(exe) and key != extension:
                 yield (
-                    'warning: shebang executable {} matches pattern of file '
-                    'extension ".{}"'
+                    Severity.WARNING,
+                    'shebang executable {} matches with file extension ".{}"'
                     .format(exe, key)
                 )
 
@@ -139,9 +138,9 @@ class CheckCommand(CommmittedFileCheck):
                 new.extension and
                 obj.get_extension() != new.extension and
                 not (
-                    new.extension in file_extensions and
+                    new.extension in FILE_EXTENSIONS and
                     obj.owner_can_execute() and
-                    file_extensions[new.extension].search(obj.get_exe())
+                    FILE_EXTENSIONS[new.extension].search(obj.get_exe())
                 )
             ):
                 return None
@@ -208,8 +207,6 @@ class CheckCommand(CommmittedFileCheck):
             not self.committed_file.commit.content_can_fail()
         ):
             self.set_state(CheckState.FAILED)
-        else:
-            self.set_state(CheckState.DONE)
 
     def _format_problem(self, line):
         """We are piping the source from Git to the commands.  We want to
@@ -242,13 +239,8 @@ class CheckCommand(CommmittedFileCheck):
                     prefix += 'col ' + col_num + ': '
                     line = ' '.join(line_split[2:]).strip(':,')
 
-        for severity in ['info', 'note', 'warning', 'error']:
-            if line.lower().startswith(severity):
-                prefix = severity + ': ' + prefix
-                line = line[len(severity):].strip(' :-')
-                break
-
-        return prefix + line
+        severity, line = Severity.split(line)
+        return severity, prefix + line
 
     def __str__(self):
         return '{} "{}" on {}'.format(

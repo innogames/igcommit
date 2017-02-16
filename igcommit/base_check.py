@@ -13,6 +13,27 @@ class CheckState(IntEnum):
     FAILED = 3
 
 
+class Severity(IntEnum):
+    # The numbers are selected to match the Syslog standard.
+    ERROR = 3
+    WARNING = 4
+    NOTICE = 5
+    NOTE = 5
+    INFO = 6
+
+    @classmethod
+    def split(cls, line):
+        """Search the severities in the begging of the string
+
+        It returns the highest severity when non match.
+        """
+        for name, severity in cls._member_map_.items():
+            if line.upper().startswith(name):
+                line = line[len(name):].strip(' :-')
+                break
+        return severity, line
+
+
 class BaseCheck(object):
     """The parent class of all checks
 
@@ -48,13 +69,16 @@ class BaseCheck(object):
 
     def print_problems(self):
         header_printed = False
-        for problem in self.get_problems():
+        for severity, problem in self.get_problems():
             if not header_printed:
                 print('=== {} ==='.format(self))
                 header_printed = True
-            print('* ' + problem)
+            print(severity.name + ': ' + problem)
+            if severity >= Severity.ERROR:
+                self.set_state(CheckState.FAILED)
         if header_printed:
             print('')
+        self.set_state(CheckState.DONE)
 
     def __str__(self):
         return type(self).__name__

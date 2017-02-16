@@ -3,7 +3,7 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
-from igcommit.base_check import CheckState, BaseCheck
+from igcommit.base_check import BaseCheck, Severity
 from igcommit.git import CommitList, Commit
 
 
@@ -43,13 +43,13 @@ class CheckDuplicateCommitSummaries(CommitListCheck):
                 duplicate_summaries.append(summary)
                 continue
             if len(duplicate_summaries) > 1:
-                yield 'error: summary "{}" duplicated {} times'.format(
-                    min(duplicate_summaries, key=len),
-                    len(duplicate_summaries),
+                yield (
+                    Severity.ERROR, 'summary "{}" duplicated {} times'.format(
+                        min(duplicate_summaries, key=len),
+                        len(duplicate_summaries),
+                    )
                 )
-                self.set_state(CheckState.FAILED)
             duplicate_summaries = [summary]
-        self.set_state(CheckState.DONE)
 
 
 class CheckMisleadingMergeCommit(CommitListCheck):
@@ -60,7 +60,6 @@ class CheckMisleadingMergeCommit(CommitListCheck):
         for commit in self.commit_list:
             summary = commit.get_summary()
             if summary.startswith(self.merge_template.format(ref_name)):
-                yield 'warning: merge commit to itself'
+                yield Severity.WARNING, 'merge commit to itself'
             elif summary.startswith(self.merge_template.format('master')):
-                yield 'warning: merge commit master'
-        self.set_state(CheckState.DONE)
+                yield Severity.WARNING, 'merge commit master'
