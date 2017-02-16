@@ -11,12 +11,12 @@ from igcommit.git import Commit, CommittedFile
 from igcommit.utils import get_exe_path
 
 file_extensions = {
+    'php': compile('^php'),
     'pp': compile('^puppet'),
     'py': compile('^python'),
     'rb': compile('^ruby'),
     'sh': compile('sh$'),
     'js': compile('js$'),
-    'php': compile('php$'),
 }
 
 
