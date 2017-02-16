@@ -100,6 +100,7 @@ checks.append(CheckCommand(
 checks.append(CheckCommand(
     args=['shellcheck', '--format=gcc', '/dev/stdin'],
     extension='sh',
+    bogus_return_code=True,
 ))
 
 # JavaScript

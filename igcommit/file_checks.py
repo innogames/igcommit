@@ -117,6 +117,7 @@ class CheckCommand(CommmittedFileCheck):
     footer = 0
     config_files = []
     config_required = False
+    bogus_return_code = False
 
     def get_exe_path(self):
         if not self.exe_path:
@@ -204,6 +205,7 @@ class CheckCommand(CommmittedFileCheck):
             )
         if (
             self.check_proc.wait() != 0 and
+            not self.bogus_return_code and
             not self.committed_file.commit.content_can_fail()
         ):
             self.set_state(CheckState.FAILED)
