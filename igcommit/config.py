@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """igcommit - Configuration of the checks
 
 Copyright (c) 2016, InnoGames GmbH
