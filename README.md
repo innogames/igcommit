@@ -53,22 +53,22 @@ Here is an example problem output:
 
 ```
 === CheckDuplicateCommitSummaries on CommitList ===
-* error: summary "Add nagios check for early expiration of licenses" duplicated 2 times
+ERROR: summary "Add nagios check for early expiration of licenses" duplicated 2 times
 
 === CheckCommitSummary on 31d0f6b ===
-* warning: summary longer than 72 characters
+WARNING: summary longer than 72 characters
 
 === CheckCommitSummary on 6bded65 ===
-* warning: past tense used on summary
+WARNING: past tense used on summary
 
 === CheckCommand "flake8" on src/check_multiple.py at 6bded65 ===
-* line 10 col 5: E225 missing whitespace around operator
-* line 17 col 80: E501 line too long (122 > 79 characters)
-* line 17 col 85: E203 whitespace before ','
+INFO: line 10 col 5: E225 missing whitespace around operator
+INFO: line 17 col 80: E501 line too long (122 > 79 characters)
+INFO: line 17 col 85: E203 whitespace before ','
 
 === CheckCommitMessage on 6fdbc00 ===
-* warning: line 7 is longer than 80
-* warning: line 9 is longer than 80
+WARNING: line 7 is longer than 80
+WARNING: line 9 is longer than 80
 ```
 
 Configuration
