@@ -338,7 +338,6 @@ class CheckYAML(FormatCheck):
         try:
             from yaml import load, YAMLError
         except ImportError:
-            raise
             return False
 
         self.load_func = load
