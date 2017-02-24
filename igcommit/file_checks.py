@@ -281,18 +281,17 @@ class FormatCheck(CommittedFileByExtensionCheck):
         assert self.load_func and self.exception_cls
 
         content_proc = self.committed_file.get_content_proc()
-        try:
-            self.load_func(content_proc.stdout.read().decode())
-        except self.exception_cls as error:
-            yield Severity.ERROR, str(error)
-        finally:
-            content_proc.stdout.close()   # Allow it to receive a SIGPIPE
-
-        if content_proc.poll() != 0:
+        content_str = content_proc.communicate()[0].decode()
+        if content_proc.returncode != 0:
             raise CalledProcessError(
                 'Git command returned non-zero exit status {}'
                 .format(content_proc.returncode)
             )
+
+        try:
+            self.load_func(content_str)
+        except self.exception_cls as error:
+            yield Severity.ERROR, str(error)
 
 
 class CheckJSON(FormatCheck):
