@@ -13,7 +13,13 @@ from igcommit.commit_checks import (
     CheckCommitSummary,
     CheckChangedFilePaths,
 )
-from igcommit.file_checks import CheckExecutable, CheckCommand
+from igcommit.file_checks import (
+    CheckExecutable,
+    CheckCommand,
+    CheckJSON,
+    CheckXML,
+    CheckYAML,
+)
 from igcommit.git import CommittedFile
 
 checks = []
@@ -153,3 +159,8 @@ checks.append(CheckCommand(
         CommittedFile('phpcs.xml.dist'),
     ],
 ))
+
+# Data exchange formats
+checks.append(CheckJSON())
+checks.append(CheckXML())
+checks.append(CheckYAML())

@@ -47,6 +47,7 @@ Features
 * Check JavaScript files with `eslint`, `jshint`, `jscs`, or `standard`
 * Check PHP files with `phpcs`
 * Run the external check commands in parallel
+* Validate JSON, XML, YAML file formats
 
 Here is an example problem output:
 
