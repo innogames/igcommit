@@ -3,12 +3,35 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
+from enum import IntEnum
 
-class CheckState(object):
-    new = 0
-    cloned = 1
-    done = 2
-    failed = 3
+
+class CheckState(IntEnum):
+    NEW = 0
+    CLONED = 1
+    DONE = 2
+    FAILED = 3
+
+
+class Severity(IntEnum):
+    # The numbers are selected to match the Syslog standard.
+    ERROR = 3
+    WARNING = 4
+    NOTICE = 5
+    NOTE = 5
+    INFO = 6
+
+    @classmethod
+    def split(cls, line):
+        """Search the severities in the begging of the string
+
+        It returns the highest severity when non match.
+        """
+        for name, severity in cls._member_map_.items():
+            if line.upper().startswith(name):
+                line = line[len(name):].strip(' :-')
+                break
+        return severity, line
 
 
 class BaseCheck(object):
@@ -19,21 +42,23 @@ class BaseCheck(object):
     methods to clone the check.
     """
     preferred_checks = []
-    state = CheckState.new
+    state = CheckState.NEW
 
-    def __init__(self, preferred_checks=None):
-        if preferred_checks:
-            self.preferred_checks = preferred_checks
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            # We expect all of the arguments to be initialized with defaults
+            # on the class.
+            assert hasattr(type(self), key)
+            if value:
+                setattr(self, key, value)
 
     def clone(self):
-        new = type(self)()
-        if self.preferred_checks:
-            new.preferred_checks = self.preferred_checks
-        new.state = CheckState.cloned
+        new = type(self)(**vars(self))
+        new.state = CheckState.CLONED
         return new
 
     def set_state(self, state):
-        assert state > CheckState.cloned
+        assert state > CheckState.CLONED
         self.state = max(self.state, state)
 
     def prepare(self, obj):
@@ -44,13 +69,16 @@ class BaseCheck(object):
 
     def print_problems(self):
         header_printed = False
-        for problem in self.get_problems():
+        for severity, problem in self.get_problems():
             if not header_printed:
                 print('=== {} ==='.format(self))
                 header_printed = True
-            print('* ' + problem)
+            print(severity.name + ': ' + problem)
+            if severity >= Severity.ERROR:
+                self.set_state(CheckState.FAILED)
         if header_printed:
             print('')
+        self.set_state(CheckState.DONE)
 
     def __str__(self):
         return type(self).__name__
@@ -65,7 +93,7 @@ def prepare_checks(checks, obj, next_checks=None):
     for check in checks:
         prepared_check = check.prepare(obj)
         if prepared_check:
-            cloned = prepared_check.state >= CheckState.cloned
+            cloned = prepared_check.state >= CheckState.CLONED
             assert next_checks is not None or cloned
 
             if cloned:

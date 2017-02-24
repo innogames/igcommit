@@ -3,7 +3,7 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
-from igcommit.base_check import CheckState, BaseCheck
+from igcommit.base_check import BaseCheck, Severity
 from igcommit.git import Commit
 
 
@@ -28,16 +28,19 @@ class CheckCommitMessage(CommitCheck):
     def get_problems(self):
         for line_id, line in enumerate(self.commit.get_message().splitlines()):
             if line_id == 1 and line:
-                yield 'error: summary extends the first line'
-                self.set_state(CheckState.failed)
+                yield Severity.ERROR, 'summary extends the first line'
             if line and line[-1] == ' ':
-                yield 'error: line {}: trailing space'.format(line_id + 1)
-                self.set_state(CheckState.failed)
+                yield (
+                    Severity.ERROR,
+                    'line {}: trailing space'.format(line_id + 1)
+                )
             if line_id > 1 and line.startswith('    ') or line.startswith('>'):
                 continue
             if len(line) >= 80:
-                yield 'warning: line {}: longer than 80'.format(line_id + 1)
-        self.set_state(CheckState.done)
+                yield (
+                    Severity.WARNING,
+                    'line {}: longer than 80'.format(line_id + 1)
+                )
 
 
 class CheckCommitSummary(CommitCheck):
@@ -59,7 +62,7 @@ class CheckCommitSummary(CommitCheck):
     def get_problems(self):
         tags, rest = self.commit.parse_tags()
         if rest.startswith('['):
-            yield 'warning: not terminated commit tags'
+            yield Severity.WARNING, 'not terminated commit tags'
         if tags:
             for problem in self.get_commit_tag_problems(tags, rest):
                 yield problem
@@ -80,61 +83,60 @@ class CheckCommitSummary(CommitCheck):
         for problem in self.get_summary_problems(rest):
             yield problem
 
-        self.set_state(CheckState.done)
-
     def get_revert_commit_problems(self, rest):
         rest = rest[len('Revert'):]
         if not rest.startswith(' "') or not rest.endswith('"'):
-            yield 'warning: ill-formatted revert commit'
-        self.set_state(CheckState.done)
+            yield Severity.WARNING, 'ill-formatted revert commit'
 
     def get_commit_tag_problems(self, tags, rest):
         used_tags = []
         for tag in tags:
             tag_upper = tag.upper()
             if tag != tag_upper:
-                yield 'error: commit tag [{}] not upper-case'.format(tag)
-                self.set_state(CheckState.failed)
+                yield (
+                    Severity.ERROR,
+                    'commit tag [{}] not upper-case'.format(tag)
+                )
             if tag_upper not in CheckCommitSummary.commit_tags:
-                yield 'warning: commit tag [{}] not on list'.format(tag)
+                yield (
+                    Severity.WARNING, 'commit tag [{}] not on list'.format(tag)
+                )
             if tag_upper in used_tags:
-                yield 'error: duplicate commit tag [{}]'.format(tag)
-                self.set_state(CheckState.failed)
+                yield Severity.ERROR, 'duplicate commit tag [{}]'.format(tag)
             used_tags.append(tag_upper)
 
         if not rest.startswith(' '):
-            yield 'warning: commit tags not separated with space'
+            yield Severity.WARNING, 'commit tags not separated with space'
 
     def get_category_problems(self, category):
         if not category[0].isalpha():
-            yield 'warning: commit category starts with non-letter'
+            yield Severity.WARNING, 'commit category starts with non-letter'
         if category != category.lower():
-            yield 'warning: commit category has upper-case letter'
+            yield Severity.WARNING, 'commit category has upper-case letter'
         if category[-1] == ' ':
-            yield 'warning: commit category ends with a space'
+            yield Severity.WARNING, 'commit category ends with a space'
 
     def get_summary_problems(self, rest):
         if not rest:
-            yield 'error: no summary'
-            self.set_state(CheckState.failed)
+            yield Severity.ERROR, 'no summary'
             return
 
         if len(rest) > 72:
-            yield 'warning: summary longer than 72 characters'
+            yield Severity.WARNING, 'summary longer than 72 characters'
 
         if '  ' in rest:
-            yield 'warning: multiple spaces'
+            yield Severity.WARNING, 'multiple spaces'
 
         if not rest[0].isalpha():
-            yield 'warning: summary start with non-letter'
+            yield Severity.WARNING, 'summary start with non-letter'
         if rest[-1] == '.':
-            yield 'warning: summary ends with a dot'
+            yield Severity.WARNING, 'summary ends with a dot'
 
         first_word = rest.split(' ', 1)[0]
         if first_word.endswith('ed'):
-            yield 'warning: past tense used on summary'
+            yield Severity.WARNING, 'past tense used on summary'
         if first_word.endswith('ing'):
-            yield 'warning: continuous tense used on summary'
+            yield Severity.WARNING, 'continuous tense used on summary'
 
 
 class CheckChangedFilePaths(CommitCheck):
@@ -146,6 +148,4 @@ class CheckChangedFilePaths(CommitCheck):
                 extension in ('pp', 'py', 'sh') and
                 changed_file.path != changed_file.path.lower()
             ):
-                yield 'error: {} has upper case'.format(changed_file)
-                self.set_state(CheckState.failed)
-        self.set_state(CheckState.done)
+                yield Severity.ERROR, '{} has upper case'.format(changed_file)

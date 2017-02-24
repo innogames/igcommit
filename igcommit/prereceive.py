@@ -19,7 +19,7 @@ class Runner(object):
         self.changed_file_checks = defaultdict(list)
 
     def run(self):
-        state = CheckState.new
+        state = CheckState.NEW
 
         # We are buffering the checks to let them run parallel in
         # the background.  Parallelization only applies to the CheckCommands.
@@ -28,7 +28,7 @@ class Runner(object):
         # too many processes.
         for check in iter_buffer(self.expand_checks(checks), 16):
             check.print_problems()
-            assert check.state >= CheckState.done
+            assert check.state >= CheckState.DONE
             state = max(state, check.state)
 
         return state
@@ -80,11 +80,11 @@ class Runner(object):
 
     def expand_checks_to_file(self, checks, changed_file):
         for check in self.changed_file_checks[changed_file.path]:
-            assert check.state >= CheckState.cloned
+            assert check.state >= CheckState.CLONED
             # Wait for the check to run
-            while check.state < CheckState.done:
+            while check.state < CheckState.DONE:
                 yield None
-            if check.state >= CheckState.failed:
+            if check.state >= CheckState.FAILED:
                 return
 
         for check in prepare_checks(checks, changed_file):
@@ -98,7 +98,7 @@ def main():
     except:
         print_exc()
     else:
-        if state >= CheckState.failed:
+        if state >= CheckState.FAILED:
             return 1
 
     return 0
