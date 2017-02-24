@@ -74,7 +74,7 @@ class BaseCheck(object):
                 print('=== {} ==='.format(self))
                 header_printed = True
             print(severity.name + ': ' + problem)
-            if severity >= Severity.ERROR:
+            if severity <= Severity.ERROR:
                 self.set_state(CheckState.FAILED)
         if header_printed:
             print('')
