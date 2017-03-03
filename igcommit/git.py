@@ -123,8 +123,8 @@ class CommittedFile(object):
     def __init__(self, path, commit=None, mode=None):
         self.path = path
         self.commit = commit
+        assert mode is None or len(mode) == 6
         self.mode = mode
-        self.shebang = None
         self._not_consumed_content_proc = None
         self._first_content_line = None
 
@@ -152,7 +152,6 @@ class CommittedFile(object):
         return self in self.commit.get_changed_files()
 
     def owner_can_execute(self):
-        assert len(self.mode) > 3
         owner_bits = int(self.mode[-3])
         return bool(owner_bits & 1)
 
@@ -166,12 +165,12 @@ class CommittedFile(object):
             git_exe_path, 'show', self.commit.commit_id + ':' + self.path
         ), stdout=stdout)
 
-    def get_shebang(self):
-        """Get the shebang from the file content
+    def _get_first_content_line(self):
+        """Save and return the first line of the file content
 
-        The shebang is always on the first line.  We are saving the first
-        line and the process we have used to get the first line to be re-used
-        by the other methods below.
+        We need the first line of the content for the symlinks and the shebang
+        of the scripts.  We are saving the first line and the process we have
+        used to get the first line to be re-used by the other methods below.
         """
         if self._first_content_line is None:
             assert self._not_consumed_content_proc is None
@@ -180,9 +179,19 @@ class CommittedFile(object):
             proc.poll()
             check_returncode(proc)
             self._not_consumed_content_proc = proc
+        return self._first_content_line
 
-        if self._first_content_line.startswith(b'#!'):
-            return self._first_content_line[len(b'#!'):].decode()
+    def get_symlink_target(self):
+        """Check if the file is a symlink and return its target"""
+        if self.mode[1] == '2':
+            return self._get_first_content_line().strip()
+        return None
+
+    def get_shebang(self):
+        """Get the shebang from the file content"""
+        line = self._get_first_content_line()
+        if line.startswith(b'#!'):
+            return line[len(b'#!'):].decode()
         return None
 
     def get_exe(self):

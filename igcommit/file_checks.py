@@ -115,6 +115,10 @@ class CommittedFileByExtensionCheck(CommittedFileCheck):
         if not new or not isinstance(obj, CommittedFile):
             return new
 
+        # There is no point of checking links by their type.
+        if obj.get_symlink_target():
+            return None
+
         # All instances of this must specify a file extension.
         assert new.extension
 
