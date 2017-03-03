@@ -17,6 +17,10 @@ down unless your commits are touching hundreds of files.
 Installation
 ------------
 
+It is possible to install the tool with `pip`::
+
+    pip install igcommit
+
 Link the `script <igcommit-receive>`_ to ``hooks/pre-receive`` on you Git
 repositories on your Git server::
 
