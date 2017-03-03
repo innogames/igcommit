@@ -3,7 +3,7 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
-from subprocess import check_output, CalledProcessError, Popen, PIPE
+from subprocess import check_output, CalledProcessError, Popen, PIPE, STDOUT
 
 from igcommit.utils import get_exe_path
 
@@ -125,7 +125,8 @@ class CommittedFile(object):
         self.commit = commit
         self.mode = mode
         self.shebang = None
-        self.not_consumed_content_proc = None
+        self._not_consumed_content_proc = None
+        self._first_content_line = None
 
     def __str__(self):
         return '{} at {}'.format(self.path, self.commit)
@@ -159,45 +160,33 @@ class CommittedFile(object):
         if '.' in self.path:
             return self.path.rsplit('.', 1)[1]
 
-    def get_content_proc(self, stdout=PIPE):
-        """Return the content of a file on a commit as bytes"""
-        if self.not_consumed_content_proc is not None:
-            proc = self.not_consumed_content_proc
-            self.not_consumed_content_proc = None
-            return proc
-
+    def _spawn_content_proc(self, stdout=PIPE):
+        """Spawn and return git process to get file content"""
         return Popen((
-            git_exe_path,
-            'show',
-            self.commit.commit_id + ':' + self.path,
+            git_exe_path, 'show', self.commit.commit_id + ':' + self.path
         ), stdout=stdout)
 
     def get_shebang(self):
         """Get the shebang from the file content
 
-        The shebang is always on the first line.  It is not really part of
-        the file, so we are trying to get it from the buffer that is going
-        to be used later on checking the file content.  This is an optimistic
-        approach that only works, if the first line is actually the shebang.
+        The shebang is always on the first line.  We are saving the first
+        line and the process we have used to get the first line to be re-used
+        by the other methods below.
         """
-        if self.shebang is None:
-            assert self.not_consumed_content_proc is None
-            proc = self.get_content_proc()
-            line = proc.stdout.readline()
-            if line.startswith(b'#!'):
-                self.not_consumed_content_proc = proc
-                self.shebang = line[len('#!'):].decode()
-            else:
-                self.shebang = ''
+        if self._first_content_line is None:
+            assert self._not_consumed_content_proc is None
+            proc = self._spawn_content_proc()
+            self._first_content_line = proc.stdout.readline()
+            proc.poll()
+            check_returncode(proc)
+            self._not_consumed_content_proc = proc
 
-            if proc.poll() not in (None, 0):
-                raise CalledProcessError(
-                    'Git command returned non-zero exit status {}'
-                    .format(proc.returncode)
-                )
-        return self.shebang
+        if self._first_content_line.startswith(b'#!'):
+            return self._first_content_line[len(b'#!'):].decode()
+        return None
 
     def get_exe(self):
+        """Get the executable from the shebang"""
         shebang_split = self.get_shebang().split(None, 2)
         if not shebang_split:
             return ''
@@ -205,12 +194,81 @@ class CommittedFile(object):
             return shebang_split[1]
         return shebang_split[0].rsplit('/', 1)[-1]
 
-    def write(self):
-        with open(self.path, 'wb') as fd:
-            proc = self.get_content_proc(fd)
+    def get_content(self):
+        """Get the file content as binary
 
-        if proc.wait() != 0:
-            raise CalledProcessError(
-                'Git command returned non-zero exit status {}'
-                .format(proc.returncode)
-            )
+        We have two ways of get the content.  If get_shebang() method is
+        called before, we must have a file descriptor which has only the first
+        line consumed.  We can consume the rest and append to the first line.
+        """
+        if self._not_consumed_content_proc is not None:
+            assert self._first_content_line is not None
+            content = self._first_content_line
+            proc = self._not_consumed_content_proc
+            self._not_consumed_content_proc = None
+        else:
+            content = b''
+            proc = self._spawn_content_proc()
+
+        content += proc.communicate()[0]
+        check_returncode(proc)
+        return content
+
+    def pass_content(self, proc_args):
+        """Pass the file content to another process
+
+        We have two ways of passing the content.  If get_shebang() method is
+        called before, we must have a file descriptor which has only the first
+        line consumed.  In this case, we need to read and pass the content
+        by ourselves.  If we don't yet have a file descriptor, we can take
+        the shortcut and just pipe two processes together.
+
+        It is not very nice to have two different ways of doing the same
+        thing, though that is the most efficient method.  We would be wasting
+        the Git content process by only reading the first line of it to get
+        the shebang, if we wouldn't be using it in here.  Likewise things
+        would be slower, if we buffer the content of every file in here
+        to pass their content to the target process.  The shebang is only
+        read for executable files, so most of the files should benefit from
+        the optimization.  This is also an important optimization for
+        parallelization.  The less we do on the main process, the more we can
+        benefit from multiple cores on the system.  Before doing thing this
+        way, I had the cute idea to pass the stdout of the content process
+        we have used to get the shebang to the target process directly.  It
+        was causing the line numbers on the syntax errors to be 1 off.
+        """
+        if self._not_consumed_content_proc is not None:
+            content_proc = self._not_consumed_content_proc
+            stdin = PIPE
+        else:
+            content_proc = self._spawn_content_proc()
+            stdin = content_proc.stdout
+        target_proc = Popen(proc_args, stdin=stdin, stdout=PIPE, stderr=STDOUT)
+        # Someone has to check the output of the content process later.
+        target_proc.content_proc = content_proc
+
+        if self._not_consumed_content_proc is not None:
+            stdin = target_proc.stdin
+            stdin.write(self.get_content())
+        stdin.close()   # Allow it to receive a SIGPIPE
+
+        return target_proc
+
+    def write(self):
+        """Write the file contents to the location its supposed to be
+
+        The Git pre-receive hooks can work on bare Git repositories.  Those
+        repositories has no actual files, only the .git database.  We need
+        to materialize the configuration files on their locations for
+        the syntax checking tools to find them.  We are doing it efficiently
+        by passing the writable file descriptor to the Git content process.
+        """
+        with open(self.path, 'wb') as fd:
+            proc = self._spawn_content_proc(fd)
+        proc.wait()
+        check_returncode(proc)
+
+
+def check_returncode(proc):
+    if proc.returncode not in (None, 0):
+        raise CalledProcessError(proc.returncode, proc.args)

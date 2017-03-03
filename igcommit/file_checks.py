@@ -4,10 +4,9 @@ Copyright (c) 2016, InnoGames GmbH
 """
 
 from re import compile
-from subprocess import CalledProcessError, Popen, PIPE, STDOUT
 
 from igcommit.base_check import BaseCheck, CheckState, Severity
-from igcommit.git import Commit, CommittedFile
+from igcommit.git import Commit, CommittedFile, check_returncode
 from igcommit.utils import get_exe_path
 
 FILE_EXTENSIONS = {
@@ -156,16 +155,16 @@ class CheckCommand(CommittedFileByExtensionCheck):
             return None
 
         if isinstance(obj, Commit):
-            config_exists = new.prepare_configs(obj)
+            config_exists = new._prepare_configs(obj)
             if not config_exists and new.config_required:
                 return None
 
         if isinstance(obj, CommittedFile):
-            new.prepare_procs()
+            new._prepare_proc()
 
         return new
 
-    def prepare_configs(self, commit):
+    def _prepare_configs(self, commit):
         config_exists = False
         for config_file in self.config_files:
             prev_commit = config_file.commit
@@ -194,19 +193,14 @@ class CheckCommand(CommittedFileByExtensionCheck):
 
         return config_exists
 
-    def prepare_procs(self):
-        self.content_proc = self.committed_file.get_content_proc()
-        self.check_proc = Popen(
-            [self.get_exe_path()] + self.args[1:],
-            stdin=self.content_proc.stdout,
-            stdout=PIPE,
-            stderr=STDOUT,
+    def _prepare_proc(self):
+        self._proc = self.committed_file.pass_content(
+            [self.get_exe_path()] + self.args[1:]
         )
-        self.content_proc.stdout.close()   # Allow it to receive a SIGPIPE
 
     def get_problems(self):
         line_buffer = []
-        for line_id, line in enumerate(self.check_proc.stdout):
+        for line_id, line in enumerate(self._proc.stdout):
             if line_id < self.header:
                 continue
             line_buffer.append(line)
@@ -214,17 +208,14 @@ class CheckCommand(CommittedFileByExtensionCheck):
                 continue
             yield self._format_problem(line_buffer.pop(0).strip().decode())
 
-        if self.content_proc.poll() != 0:
-            raise CalledProcessError(
-                'Git command returned non-zero exit status {}'
-                .format(self.content_proc.returncode)
-            )
-        if (
-            self.check_proc.wait() != 0 and
-            not self.bogus_return_code and
-            not self.committed_file.commit.content_can_fail()
-        ):
-            self.set_state(CheckState.FAILED)
+        if self._proc.wait() != 0:
+            self._proc.content_proc.poll()
+            check_returncode(self._proc.content_proc)
+            if (
+                not self.bogus_return_code and
+                not self.committed_file.commit.content_can_fail()
+            ):
+                self.set_state(CheckState.FAILED)
 
     def _format_problem(self, line):
         """We are piping the source from Git to the commands.  We want to
@@ -279,17 +270,8 @@ class FormatCheck(CommittedFileByExtensionCheck):
 
     def get_problems(self):
         assert self.load_func and self.exception_cls
-
-        content_proc = self.committed_file.get_content_proc()
-        content_str = content_proc.communicate()[0].decode()
-        if content_proc.returncode != 0:
-            raise CalledProcessError(
-                'Git command returned non-zero exit status {}'
-                .format(content_proc.returncode)
-            )
-
         try:
-            self.load_func(content_str)
+            self.load_func(self.committed_file.get_content().decode())
         except self.exception_cls as error:
             yield Severity.ERROR, str(error)
 
