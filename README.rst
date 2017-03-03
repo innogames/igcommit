@@ -37,6 +37,7 @@ Features
 * Check for changed file paths
 * Accept commits tagged as ``[HOTFIX]``, ``[MESS]`` or ``[WIP]`` with issues
 * Check executable bits and shebangs
+* Check symlinks
 * Check CSS files with ``csslint``
 * Check Go files with ``golint``
 * Check HTML files with ``htmlhint``

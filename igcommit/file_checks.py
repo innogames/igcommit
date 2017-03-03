@@ -107,6 +107,27 @@ class CheckExecutable(CommittedFileCheck):
                 )
 
 
+class CheckSymlink(CommittedFileCheck):
+    """Special check for symlinks"""
+    def prepare(self, obj):
+        new = super(CheckSymlink, self).prepare(obj)
+        if not new or (
+            isinstance(obj, CommittedFile) and not obj.get_symlink_target()
+        ):
+            return None
+        return new
+
+    def get_problems(self):
+        symlink_target = self.committed_file.get_symlink_target()
+        target_file = CommittedFile(symlink_target, self.committed_file.commit)
+        if not target_file.exists():
+            yield (
+                Severity.WARNING,
+                'symlink target "{}" doesn\'t exist on repository'
+                .format(symlink_target)
+            )
+
+
 class CommittedFileByExtensionCheck(CommittedFileCheck):
     extension = None
 

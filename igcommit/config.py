@@ -14,6 +14,7 @@ from igcommit.commit_checks import (
 )
 from igcommit.file_checks import (
     CheckExecutable,
+    CheckSymlink,
     CheckCommand,
     CheckJSON,
     CheckXML,
@@ -34,6 +35,7 @@ checks.append(CheckChangedFilePaths())
 
 # File meta checks
 checks.append(CheckExecutable())
+checks.append(CheckSymlink())
 
 # CSS
 checks.append(CheckCommand(
