@@ -6,6 +6,7 @@ Copyright (c) 2016, InnoGames GmbH
 from igcommit.commit_list_checks import (
     CheckDuplicateCommitSummaries,
     CheckMisleadingMergeCommit,
+    CheckTimestamps,
 )
 from igcommit.commit_checks import (
     CheckCommitMessage,
@@ -27,6 +28,7 @@ checks = []
 # Commit list checks
 checks.append(CheckDuplicateCommitSummaries())
 checks.append(CheckMisleadingMergeCommit())
+checks.append(CheckTimestamps())
 
 # Commit checks
 checks.append(CheckCommitMessage())

@@ -3,6 +3,8 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
+from time import time
+
 from igcommit.base_check import BaseCheck, Severity
 from igcommit.git import CommitList, Commit
 
@@ -63,3 +65,46 @@ class CheckMisleadingMergeCommit(CommitListCheck):
                 yield Severity.WARNING, 'merge commit to itself'
             elif summary.startswith(self.merge_template.format('master')):
                 yield Severity.WARNING, 'merge commit master'
+
+
+class CheckTimestamps(CommitListCheck):
+    current_timestamp = time()
+
+    def get_problems(self):
+        previous_author_timestamp = 0
+        previous_committer_timestamp = 0
+        for commit in self.commit_list:
+            author_timestamp = commit.get_author().timestamp
+            committer_timestamp = commit.get_committer().timestamp
+            if author_timestamp > self.current_timestamp:
+                yield (
+                    Severity.ERROR,
+                    'author timestamp of commit {} in future'
+                    .format(commit),
+                )
+            if committer_timestamp > self.current_timestamp:
+                yield (
+                    Severity.ERROR,
+                    'committer timestamp of commit {} in future'
+                    .format(commit),
+                )
+            if author_timestamp > committer_timestamp:
+                yield (
+                    Severity.ERROR,
+                    'author timestamp of commit {} after committer'
+                    .format(commit),
+                )
+            if previous_author_timestamp > author_timestamp:
+                yield (
+                    Severity.WARNING,
+                    'author timestamp of commit {} before previous commit'
+                    .format(commit),
+                )
+            if previous_committer_timestamp > committer_timestamp:
+                yield (
+                    Severity.ERROR,
+                    'committer timestamp of commit {} before previous commit'
+                    .format(commit),
+                )
+            previous_author_timestamp = author_timestamp
+            previous_committer_timestamp = committer_timestamp

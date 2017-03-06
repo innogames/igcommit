@@ -35,6 +35,7 @@ Features
 * Report all problems before failing
 * Check for duplicate commit summaries
 * Check for misleading merge commits
+* Validate committer and author timestamps
 * Check commit message best practices (80 lines, first line summary...)
 * Check commit summary formatting
 * Validate commit tags against a list ``[BUGFIX]``, ``[FEATURE]``, ``[WIP]``...

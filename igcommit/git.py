@@ -33,7 +33,7 @@ class Commit(object):
     def __init__(self, commit_id, commit_list=None):
         self.commit_id = commit_id
         self.commit_list = commit_list
-        self.message = None
+        self._message = None
         self.changed_files = None
 
     def __str__(self):
@@ -50,29 +50,49 @@ class Commit(object):
 
     def get_new_commit_list(self, ref_path):
         """Get the list of parent new commits in order"""
-        output = check_output((
+        output = check_output([
             git_exe_path,
             'rev-list',
             self.commit_id,
             '--not',
             '--all',
             '--reverse',
-        )).decode()
+        ]).decode()
         commit_list = CommitList([], ref_path)
         for commit_id in output.splitlines():
-            commit_list.append(Commit(commit_id, commit_list))
+            commit = Commit(commit_id, commit_list)
+            commit_list.append(commit)
         return commit_list
 
+    def _fetch_content(self):
+        proc = Popen(
+            [git_exe_path, 'cat-file', '-p', self.commit_id],
+            stdout=PIPE,
+        )
+        line = None
+        while line != b'':
+            line = proc.stdout.readline().rstrip()
+            if line.startswith(b'author '):
+                self._author = Contribution.parse(line[len(b'author '):])
+            if line.startswith(b'committer '):
+                self._committer = Contribution.parse(line[len(b'committer '):])
+        self._message = proc.stdout.read().decode('utf8')
+        check_returncode(proc)
+
+    def get_author(self):
+        if not self._message:
+            self._fetch_content()
+        return self._author
+
+    def get_committer(self):
+        if not self._message:
+            self._fetch_content()
+        return self._committer
+
     def get_message(self):
-        if self.message is None:
-            self.message = check_output((
-                git_exe_path,
-                'log',
-                '--format=%B',
-                '--max-count=1',
-                self.commit_id,
-            )).decode()
-        return self.message
+        if not self._message:
+            self._fetch_content()
+        return self._message
 
     def get_summary(self):
         for line in self.get_message().splitlines():
@@ -95,16 +115,16 @@ class Commit(object):
     def get_changed_files(self):
         """Return the list of added or modified files on a commit"""
         if self.changed_files is None:
-            output = check_output((
+            output = check_output([
                 git_exe_path,
                 'diff-tree',
                 '-r',
                 '--no-commit-id',
                 '--break-rewrites',     # Get rewrites as additions
-                '--no-renames',         # Get rewrites as additions
+                '--no-renames',         # Get renames as additions
                 '--diff-filter=AM',     # Only additions and modifications
                 self.commit_id,
-            )).decode()
+            ]).decode()
             changed_files = []
             for line in output.splitlines():
                 line_split = line.split()
@@ -115,6 +135,23 @@ class Commit(object):
                 changed_files.append(CommittedFile(file_path, self, file_mode))
             self.changed_files = changed_files
         return self.changed_files
+
+
+class Contribution(object):
+    """Routines on contribution properties of a commit"""
+
+    def __init__(self, name, email, timestamp):
+        self.name = name
+        self.email = email
+        self.timestamp = timestamp
+
+    @classmethod
+    def parse(cls, line):
+        """Parse the contribution line as bytes"""
+        name, line = line.split(b' <', 1)
+        email, line = line.split(b'> ', 1)
+        timestamp, line = line.split(b' ', 1)
+        return cls(name.decode('utf8'), email.decode(), int(timestamp))
 
 
 class CommittedFile(object):
@@ -139,14 +176,14 @@ class CommittedFile(object):
         )
 
     def exists(self):
-        return bool(check_output((
+        return bool(check_output([
             git_exe_path,
             'ls-tree',
             '--name-only',
             '-r',
             self.commit.commit_id,
             self.path,
-        )))
+        ]))
 
     def changed(self):
         return self in self.commit.get_changed_files()
