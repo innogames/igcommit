@@ -234,7 +234,6 @@ class CheckCommand(CommittedFileByExtensionCheck):
             yield self._format_problem(line_buffer.pop(0).strip().decode())
 
         if self._proc.wait() != 0:
-            self._proc.content_proc.poll()
             check_returncode(self._proc.content_proc)
             if (
                 not self.bogus_return_code and

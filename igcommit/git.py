@@ -213,7 +213,6 @@ class CommittedFile(object):
             assert self._not_consumed_content_proc is None
             proc = self._spawn_content_proc()
             self._first_content_line = proc.stdout.readline()
-            proc.poll()
             check_returncode(proc)
             self._not_consumed_content_proc = proc
         return self._first_content_line
@@ -316,5 +315,10 @@ class CommittedFile(object):
 
 
 def check_returncode(proc):
-    if proc.returncode not in (None, 0):
+    if proc.returncode is None:
+        proc.poll()
+        if proc.returncode is None:
+            return
+
+    if proc.returncode != 0:
         raise CalledProcessError(proc.returncode, proc.args)
