@@ -228,7 +228,7 @@ class CommittedFile(object):
         line = self._get_first_content_line()
         if line.startswith(b'#!'):
             return line[len(b'#!'):].decode()
-        return None
+        return ''
 
     def get_exe(self):
         """Get the executable from the shebang"""
