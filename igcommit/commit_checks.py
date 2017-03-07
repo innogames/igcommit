@@ -36,10 +36,10 @@ class CheckCommitMessage(CommitCheck):
                 )
             if line_id > 1 and line.startswith('    ') or line.startswith('>'):
                 continue
-            if len(line) >= 80:
+            if len(line) > 72:
                 yield (
                     Severity.WARNING,
-                    'line {}: longer than 80'.format(line_id + 1)
+                    'line {}: longer than 72'.format(line_id + 1)
                 )
 
 
@@ -121,8 +121,8 @@ class CheckCommitSummary(CommitCheck):
             yield Severity.ERROR, 'no summary'
             return
 
-        if len(rest) > 72:
-            yield Severity.WARNING, 'summary longer than 72 characters'
+        if len(rest) > 50:
+            yield Severity.WARNING, 'summary longer than 50 characters'
 
         if '  ' in rest:
             yield Severity.WARNING, 'multiple spaces'
