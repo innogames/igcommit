@@ -7,6 +7,7 @@ from igcommit.commit_list_checks import (
     CheckDuplicateCommitSummaries,
     CheckMisleadingMergeCommit,
     CheckTimestamps,
+    CheckContributors,
 )
 from igcommit.commit_checks import (
     CheckCommitMessage,
@@ -29,6 +30,7 @@ checks = []
 checks.append(CheckDuplicateCommitSummaries())
 checks.append(CheckMisleadingMergeCommit())
 checks.append(CheckTimestamps())
+checks.append(CheckContributors())
 
 # Commit checks
 checks.append(CheckCommitMessage())

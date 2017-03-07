@@ -25,6 +25,11 @@ class CommitList(list):
             name += ' ({})'.format(self.ref_path)
         return name
 
+    def get_old_contributors(self):
+        for commit in self[0].get_old_commits():
+            for contributor in commit.get_contributors():
+                yield contributor
+
 
 class Commit(object):
     """Routines on a single commit"""
@@ -65,6 +70,13 @@ class Commit(object):
             commit_list.append(commit)
         return commit_list
 
+    def get_old_commits(self):
+        """Yield old commits in reverse chronological order"""
+        proc = Popen([git_exe_path, 'rev-list', self.commit_id], stdout=PIPE)
+        for commit_id in iter(proc.stdout.readline, b''):
+            yield Commit(commit_id.rstrip())
+            check_returncode(proc)
+
     def _fetch_content(self):
         self._content_proc = Popen(
             [git_exe_path, 'cat-file', '-p', self.commit_id],
@@ -88,6 +100,10 @@ class Commit(object):
         if not self._content_proc:
             self._fetch_content()
         return self._committer
+
+    def get_contributors(self):
+        yield self.get_author()
+        yield self._committer
 
     def get_message(self):
         if not self._content_proc:
@@ -155,6 +171,9 @@ class Contribution(object):
         email, line = line.split(b'> ', 1)
         timestamp, line = line.split(b' ', 1)
         return cls(name.decode('utf8'), email.decode(), int(timestamp))
+
+    def get_email_domain(self):
+        return self.email.split('@', 1)[-1]
 
 
 class CommittedFile(object):

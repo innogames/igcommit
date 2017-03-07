@@ -108,3 +108,108 @@ class CheckTimestamps(CommitListCheck):
                 )
             previous_author_timestamp = author_timestamp
             previous_committer_timestamp = committer_timestamp
+
+
+class CheckContributors(CommitListCheck):
+    """Validate consistency of committer and author name and email addresses
+
+    We threat committers and authors the same way in this class.  It is common
+    Git bad practice to commit with different combinations of names and
+    email addresses ruining useful statistics that can be made using the Git
+    history.  There is not too much we can do about without having
+    the possible list of all users, and that is certainly not something we
+    would like.
+
+    In this class, we are searching and indexing the Git commits in the past
+    to find out the same names and email address, and cross check them with
+    the current commits.  We are using the name together with the domain part
+    of the email address.  It is common for some systems to commit changes
+    in behalf of the user with a different email address.  Including
+    the domain on the index would let it happen.
+    """
+    # The indexes are global, because we expect the checks to be executed
+    # on a single repository.
+    indexes = 2
+    email_index = {}
+    name_index = {}
+
+    def get_problems(self):
+        old_contributors = self.commit_list.get_old_contributors()
+        indexes = CheckContributors.indexes
+        for commit in self.commit_list:
+            for contributor in commit.get_contributors():
+                if not self.index_contributors(old_contributors, contributor):
+                    # If we couldn't index any contributor from the old
+                    # commits, we would use the new contributor for all
+                    # indexes.  In this case, there is no point of checking
+                    # this contributor.
+                    if self.index_contributor(contributor) == indexes:
+                        continue
+
+                for problem in self.check_contributor(contributor, commit):
+                    yield problem
+
+                    # We override the indexes after reporting the first
+                    # problem to avoid the same error to be reported again.
+                    self.index_contributor(contributor, override=True)
+
+    def index_contributor(self, contributor, override=False, dry_run=False):
+        """Index a single contributor
+
+        The function does nothing when the contributor is indexed.  It returns
+        with the number of indexes the contributor is put.  The dry_run
+        argument is used to test only, if the contributor is indexed.
+        """
+        indexed = 0
+
+        if contributor.email not in CheckContributors.email_index or override:
+            if not dry_run:
+                CheckContributors.email_index[contributor.email] = contributor
+            indexed += 1
+
+        name_key = contributor.name + contributor.get_email_domain()
+        if name_key not in CheckContributors.name_index or override:
+            if not dry_run:
+                CheckContributors.name_index[name_key] = contributor
+            indexed += 1
+
+        return indexed
+
+    def index_contributors(self, contributors, searched):
+        """Index contributors until the searched one is found
+
+        The function stops when the searched one is found.  We assume
+        the caller to pass the existing generator again to avoid starting over
+        to search the next one.  It returns with true when the searched one
+        is found; returns with false when all of the items are indexes but
+        the searched one is not found.
+        """
+        while self.index_contributor(searched, dry_run=True) > 0:
+            for contributor in contributors:
+                if self.index_contributor(contributor) > 0:
+                    break
+            else:
+                return False
+        return True
+
+    def check_contributor(self, contributor, commit):
+        """Check one contributor against the indexes"""
+        other = CheckContributors.email_index.get(contributor.email)
+        if other and contributor.name != other.name:
+            yield (
+                Severity.ERROR,
+                'contributor of commit {} has a different name "{}" '
+                'than "{}" the contributor with the same email address'
+                .format(commit, contributor.name, other.name),
+            )
+
+        name_key = contributor.name + contributor.get_email_domain()
+        other = CheckContributors.name_index.get(name_key)
+        if other and contributor.email != other.email:
+            yield (
+                Severity.ERROR,
+                'contributor of commit {} has a different email address "{}" '
+                'with the same domain than "{}" from contributor with '
+                'the same name'
+                .format(commit, contributor.email, other.email),
+            )
