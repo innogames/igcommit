@@ -33,6 +33,7 @@ class Commit(object):
     def __init__(self, commit_id, commit_list=None):
         self.commit_id = commit_id
         self.commit_list = commit_list
+        self._content_proc = None
         self._message = None
         self.changed_files = None
 
@@ -65,33 +66,35 @@ class Commit(object):
         return commit_list
 
     def _fetch_content(self):
-        proc = Popen(
+        self._content_proc = Popen(
             [git_exe_path, 'cat-file', '-p', self.commit_id],
             stdout=PIPE,
         )
-        line = None
-        while line != b'':
-            line = proc.stdout.readline().rstrip()
+        # The commit message starts after the empty line.  We iterate until
+        # we find one, and then consume the rest as the message.
+        for line in iter(self._content_proc.stdout.readline, b'\n'):
             if line.startswith(b'author '):
                 self._author = Contribution.parse(line[len(b'author '):])
             if line.startswith(b'committer '):
                 self._committer = Contribution.parse(line[len(b'committer '):])
-        self._message = proc.stdout.read().decode('utf8')
-        check_returncode(proc)
+            check_returncode(self._content_proc)
 
     def get_author(self):
-        if not self._message:
+        if not self._content_proc:
             self._fetch_content()
         return self._author
 
     def get_committer(self):
-        if not self._message:
+        if not self._content_proc:
             self._fetch_content()
         return self._committer
 
     def get_message(self):
-        if not self._message:
+        if not self._content_proc:
             self._fetch_content()
+        if not self._message:
+            self._message = self._content_proc.stdout.read().decode('utf8')
+            check_returncode(self._content_proc)
         return self._message
 
     def get_summary(self):
