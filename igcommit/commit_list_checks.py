@@ -129,28 +129,26 @@ class CheckContributors(CommitListCheck):
     """
     # The indexes are global, because we expect the checks to be executed
     # on a single repository.
-    indexes = 2
     email_index = {}
+    domain_index = {}
     name_index = {}
 
     def get_problems(self):
         old_contributors = self.get_old_contributors()
-        indexes = CheckContributors.indexes
         for commit in self.commit_list:
             for contributor in commit.get_contributors():
-                if not self.index_contributors(old_contributors, contributor):
-                    # If we couldn't index any contributor from the old
-                    # commits, we would use the new contributor for all
-                    # indexes.  In this case, there is no point of checking
-                    # this contributor.
-                    if self.index_contributor(contributor) == indexes:
-                        continue
+                found = self.index_contributors(old_contributors, contributor)
 
                 for problem in self.check_contributor(contributor, commit):
                     yield problem
 
-                    # We override the indexes after reporting the first
-                    # problem to avoid the same error to be reported again.
+                    # If there are any problems, evidently the contributor
+                    # is not consistent with the indexes.  We override
+                    # the indexes after reporting problem to avoid the same
+                    # ones to be reported again.
+                    found = False
+
+                if not found:
                     self.index_contributor(contributor, override=True)
 
     def get_old_commits(self):
@@ -179,24 +177,31 @@ class CheckContributors(CommitListCheck):
     def index_contributor(self, contributor, override=False, dry_run=False):
         """Index a single contributor
 
-        The function does nothing when the contributor is indexed.  It returns
-        with the number of indexes the contributor is put.  The dry_run
-        argument is used to test only, if the contributor is indexed.
+        The function does nothing when the contributor is already indexed.
+        It returns true when if would add the contributor to any index.
+        The dry_run argument is used to test only, if the contributor is
+        indexed.
         """
-        indexed = 0
+        found = False
 
         if contributor.email not in CheckContributors.email_index or override:
             if not dry_run:
                 CheckContributors.email_index[contributor.email] = contributor
-            indexed += 1
+            found = True
 
-        name_key = contributor.name + contributor.get_email_domain()
+        domain = contributor.get_email_domain()
+        if domain not in CheckContributors.domain_index or override:
+            if not dry_run:
+                CheckContributors.domain_index[domain] = None
+            found = True
+
+        name_key = contributor.name + domain
         if name_key not in CheckContributors.name_index or override:
             if not dry_run:
                 CheckContributors.name_index[name_key] = contributor
-            indexed += 1
+            found = True
 
-        return indexed
+        return found
 
     def index_contributors(self, contributors, searched):
         """Index contributors until the searched one is found
@@ -207,9 +212,9 @@ class CheckContributors(CommitListCheck):
         is found; returns with false when all of the items are indexes but
         the searched one is not found.
         """
-        while self.index_contributor(searched, dry_run=True) > 0:
+        while self.index_contributor(searched, dry_run=True):
             for contributor in contributors:
-                if self.index_contributor(contributor) > 0:
+                if self.index_contributor(contributor):
                     break
             else:
                 return False
@@ -226,8 +231,16 @@ class CheckContributors(CommitListCheck):
                 .format(commit, contributor.name, other.name),
             )
 
-        name_key = contributor.name + contributor.get_email_domain()
-        other = CheckContributors.name_index.get(name_key)
+        domain = contributor.get_email_domain()
+        if domain not in CheckContributors.domain_index:
+            yield (
+                Severity.NOTICE,
+                'contributor of commit {} has a email address with a new '
+                'domain "{}" '
+                .format(commit, domain),
+            )
+
+        other = CheckContributors.name_index.get(contributor.name + domain)
         if other and contributor.email != other.email:
             yield (
                 Severity.ERROR,
