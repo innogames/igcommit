@@ -134,7 +134,7 @@ class CheckContributors(CommitListCheck):
     name_index = {}
 
     def get_problems(self):
-        old_contributors = self.commit_list.get_old_contributors()
+        old_contributors = self.get_old_contributors()
         indexes = CheckContributors.indexes
         for commit in self.commit_list:
             for contributor in commit.get_contributors():
@@ -152,6 +152,29 @@ class CheckContributors(CommitListCheck):
                     # We override the indexes after reporting the first
                     # problem to avoid the same error to be reported again.
                     self.index_contributor(contributor, override=True)
+
+    def get_old_commits(self):
+        """Yield old commits in reverse order
+
+        We could call "git rev-list" here, but it is easy enough to implement
+        the same using the content we already need for other reasons.  Though
+        "git rev-list" would order the commits nicer, we are not putting any
+        effort to the ordering in here as our caller is not sensitive.
+        """
+        unused_commits = self.commit_list[0].get_parents()
+        commit_ids = {c.commit_id for c in unused_commits}
+        while unused_commits:
+            unused_commit = unused_commits.pop(0)
+            yield unused_commit
+            for commit in unused_commit.get_parents():
+                if commit.commit_id not in commit_ids:
+                    unused_commits.append(commit)
+                    commit_ids.add(commit.commit_id)
+
+    def get_old_contributors(self):
+        for commit in self.get_old_commits():
+            for contributor in commit.get_contributors():
+                yield contributor
 
     def index_contributor(self, contributor, override=False, dry_run=False):
         """Index a single contributor

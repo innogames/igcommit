@@ -25,11 +25,6 @@ class CommitList(list):
             name += ' ({})'.format(self.ref_path)
         return name
 
-    def get_old_contributors(self):
-        for commit in self[0].get_old_commits():
-            for contributor in commit.get_contributors():
-                yield contributor
-
 
 class Commit(object):
     """Routines on a single commit"""
@@ -70,26 +65,27 @@ class Commit(object):
             commit_list.append(commit)
         return commit_list
 
-    def get_old_commits(self):
-        """Yield old commits in reverse chronological order"""
-        proc = Popen([git_exe_path, 'rev-list', self.commit_id], stdout=PIPE)
-        for commit_id in iter(proc.stdout.readline, b''):
-            yield Commit(commit_id.rstrip())
-            check_returncode(proc)
-
     def _fetch_content(self):
         self._content_proc = Popen(
             [git_exe_path, 'cat-file', '-p', self.commit_id],
             stdout=PIPE,
         )
+        self._parents = []
         # The commit message starts after the empty line.  We iterate until
         # we find one, and then consume the rest as the message.
         for line in iter(self._content_proc.stdout.readline, b'\n'):
+            if line.startswith(b'parent '):
+                self._parents.append(Commit(line[len(b'parent '):].rstrip()))
             if line.startswith(b'author '):
                 self._author = Contribution.parse(line[len(b'author '):])
             if line.startswith(b'committer '):
                 self._committer = Contribution.parse(line[len(b'committer '):])
             check_returncode(self._content_proc)
+
+    def get_parents(self):
+        if not self._content_proc:
+            self._fetch_content()
+        return self._parents
 
     def get_author(self):
         if not self._content_proc:
