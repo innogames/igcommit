@@ -127,11 +127,12 @@ class CheckContributors(CommitListCheck):
     in behalf of the user with a different email address.  Including
     the domain on the index would let it happen.
     """
-    # The indexes are global, because we expect the checks to be executed
-    # on a single repository.
-    email_index = {}
-    domain_index = {}
-    name_index = {}
+    def prepare(self, obj):
+        new = super(CheckContributors, self).prepare(obj)
+        if new and isinstance(obj, CommitList):
+            self.email_index = {}
+            self.domain_index = {}
+            self.name_index = {}
 
     def get_problems(self):
         old_contributors = self.get_old_contributors()
@@ -184,21 +185,21 @@ class CheckContributors(CommitListCheck):
         """
         found = False
 
-        if contributor.email not in CheckContributors.email_index or override:
+        if contributor.email not in self.email_index or override:
             if not dry_run:
-                CheckContributors.email_index[contributor.email] = contributor
+                self.email_index[contributor.email] = contributor
             found = True
 
         domain = contributor.get_email_domain()
-        if domain not in CheckContributors.domain_index or override:
+        if domain not in self.domain_index or override:
             if not dry_run:
-                CheckContributors.domain_index[domain] = None
+                self.domain_index[domain] = None
             found = True
 
         name_key = contributor.name + domain
-        if name_key not in CheckContributors.name_index or override:
+        if name_key not in self.name_index or override:
             if not dry_run:
-                CheckContributors.name_index[name_key] = contributor
+                self.name_index[name_key] = contributor
             found = True
 
         return found
@@ -222,7 +223,8 @@ class CheckContributors(CommitListCheck):
 
     def check_contributor(self, contributor, commit):
         """Check one contributor against the indexes"""
-        other = CheckContributors.email_index.get(contributor.email)
+
+        other = self.email_index.get(contributor.email)
         if other and contributor.name != other.name:
             yield (
                 Severity.ERROR,
@@ -232,7 +234,7 @@ class CheckContributors(CommitListCheck):
             )
 
         domain = contributor.get_email_domain()
-        if domain not in CheckContributors.domain_index:
+        if domain not in self.domain_index:
             yield (
                 Severity.NOTICE,
                 'contributor of commit {} has a email address with a new '
@@ -240,7 +242,7 @@ class CheckContributors(CommitListCheck):
                 .format(commit, domain),
             )
 
-        other = CheckContributors.name_index.get(contributor.name + domain)
+        other = self.name_index.get(contributor.name + domain)
         if other and contributor.email != other.email:
             yield (
                 Severity.ERROR,
