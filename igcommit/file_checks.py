@@ -59,10 +59,6 @@ class CheckExecutable(CommittedFileCheck):
         return new
 
     def get_problems(self):
-        extension = self.committed_file.get_extension()
-        if extension == 'sh':
-            yield Severity.WARNING, 'executable has file extension .sh'
-
         shebang = self.committed_file.get_shebang()
         if not shebang:
             yield Severity.ERROR, 'no shebang'
@@ -83,23 +79,31 @@ class CheckExecutable(CommittedFileCheck):
                 Severity.WARNING, 'shebang is not portable (use /usr/bin/env)'
             )
 
-        if extension:
-            for problem in self.get_exe_problems(extension):
-                yield problem
+        for problem in self.get_exe_problems():
+            yield problem
 
-    def get_exe_problems(self, extension):
+    def get_exe_problems(self):
+        extension = self.committed_file.get_extension()
+        if not extension:
+            return
+
         exe = self.committed_file.get_exe()
-        if (
-            extension in FILE_EXTENSIONS and
-            not FILE_EXTENSIONS[extension].search(exe)
-        ):
-            yield (
-                Severity.ERROR,
-                'shebang executable "{}" doesn\'t match pattern "{}"'
-                .format(exe, FILE_EXTENSIONS[extension].pattern)
-            )
+        if extension in FILE_EXTENSIONS:
+            if FILE_EXTENSIONS[extension].search(exe):
+                yield Severity.WARNING, 'redundant file extension'
+            else:
+                yield (
+                    Severity.ERROR,
+                    'shebang executable "{}" doesn\'t match pattern "{}"'
+                    .format(exe, FILE_EXTENSIONS[extension].pattern)
+                )
+            return
+
+        # If the file has an extension we don't know about, we test if
+        # the executable matches with any extension we know.  If so, it
+        # should probably now have this extension.
         for key, pattern in FILE_EXTENSIONS.items():
-            if pattern.search(exe) and key != extension:
+            if pattern.search(exe):
                 yield (
                     Severity.WARNING,
                     'shebang executable {} matches with file extension ".{}"'
