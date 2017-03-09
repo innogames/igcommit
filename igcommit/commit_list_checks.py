@@ -196,10 +196,9 @@ class CheckContributors(CommitListCheck):
                 self.domain_index[domain] = None
             found = True
 
-        name_key = contributor.name + domain
-        if name_key not in self.name_index or override:
+        if (contributor.name, domain) not in self.name_index or override:
             if not dry_run:
-                self.name_index[name_key] = contributor
+                self.name_index[(contributor.name, domain)] = contributor
             found = True
 
         return found
@@ -242,7 +241,7 @@ class CheckContributors(CommitListCheck):
                 .format(commit, domain),
             )
 
-        other = self.name_index.get(contributor.name + domain)
+        other = self.name_index.get((contributor.name, domain))
         if other and contributor.email != other.email:
             yield (
                 Severity.ERROR,
