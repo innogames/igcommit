@@ -96,7 +96,7 @@ class CheckTimestamps(CommitListCheck):
                 )
             if previous_author_timestamp > author_timestamp:
                 yield (
-                    Severity.WARNING,
+                    Severity.NOTICE,
                     'author timestamp of commit {} before previous commit'
                     .format(commit),
                 )
