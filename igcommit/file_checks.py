@@ -18,6 +18,14 @@ FILE_EXTENSIONS = {
     'js': compile('js$'),
 }
 
+GENERAL_EXECUTABLE_NAMES = [
+    'exec',
+    'go',
+    'install',
+    'run',
+    'setup',
+]
+
 
 class CommittedFileCheck(BaseCheck):
     """Parent class for checks on a single committed file
@@ -85,18 +93,27 @@ class CheckExecutable(CommittedFileCheck):
     def get_exe_problems(self):
         extension = self.committed_file.get_extension()
         if not extension:
+            name = self.committed_file.get_filename()
+            if name in FILE_EXTENSIONS:
+                yield Severity.ERROR, 'file extension without a name'
+            if name in GENERAL_EXECUTABLE_NAMES:
+                yield Severity.WARNING, 'general executable name'
             return
 
         exe = self.committed_file.get_exe()
         if extension in FILE_EXTENSIONS:
-            if FILE_EXTENSIONS[extension].search(exe):
-                yield Severity.WARNING, 'redundant file extension'
-            else:
+            if not FILE_EXTENSIONS[extension].search(exe):
                 yield (
                     Severity.ERROR,
                     'shebang executable "{}" doesn\'t match pattern "{}"'
                     .format(exe, FILE_EXTENSIONS[extension].pattern)
                 )
+                return
+
+            # We are white-listing general names to have a file extension.
+            name = self.committed_file.get_filename()[:(len(extension) + 1)]
+            if name not in GENERAL_EXECUTABLE_NAMES:
+                yield Severity.WARNING, 'redundant file extension'
             return
 
         # If the file has an extension we don't know about, we test if

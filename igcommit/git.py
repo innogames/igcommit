@@ -210,9 +210,13 @@ class CommittedFile(object):
         owner_bits = int(self.mode[-3])
         return bool(owner_bits & 1)
 
+    def get_filename(self):
+        return self.path.rsplit('/', 1)[-1]
+
     def get_extension(self):
         if '.' in self.path:
             return self.path.rsplit('.', 1)[1]
+        return None
 
     def _spawn_content_proc(self, stdout=PIPE):
         """Spawn and return git process to get file content"""
