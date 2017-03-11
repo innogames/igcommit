@@ -149,6 +149,18 @@ to test it on a Git repository against last 50 commits::
         python ../igcommit/igcommit-receive
 
 
+Changes
+-------
+
+Version 2.0
+    * Fix line numbers on syntax errors for executables being 1 off
+    * Recognize and validate symlinks
+    * Validate committer and author timestamps
+    * Validate contributor names and email addresses
+    * Reduce commit message line length limits
+    * Complain about file extensions on executables
+
+
 License
 -------
 
