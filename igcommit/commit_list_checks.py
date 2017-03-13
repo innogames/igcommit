@@ -76,13 +76,13 @@ class CheckTimestamps(CommitListCheck):
         for commit in self.commit_list:
             author_timestamp = commit.get_author().timestamp
             committer_timestamp = commit.get_committer().timestamp
-            if author_timestamp > self.current_timestamp:
+            if author_timestamp > self.current_timestamp + 1:
                 yield (
                     Severity.ERROR,
                     'author timestamp of commit {} in future'
                     .format(commit),
                 )
-            if committer_timestamp > self.current_timestamp:
+            if committer_timestamp > self.current_timestamp + 1:
                 yield (
                     Severity.ERROR,
                     'committer timestamp of commit {} in future'
