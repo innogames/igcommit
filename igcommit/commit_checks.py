@@ -55,6 +55,7 @@ class CheckCommitSummary(CommitCheck):
         'SECURITY',
         'STYLE',
         'TASK',
+        'TEMP',
         'WIP',
         '!!',
     }
