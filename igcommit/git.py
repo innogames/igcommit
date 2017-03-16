@@ -134,7 +134,8 @@ class Commit(object):
                 git_exe_path,
                 'diff-tree',
                 '-r',
-                '--no-commit-id',
+                '--root',               # Get the initial commit as additions
+                '--no-commit-id',       # We already know the commit id.
                 '--break-rewrites',     # Get rewrites as additions
                 '--no-renames',         # Get renames as additions
                 '--diff-filter=AM',     # Only additions and modifications
