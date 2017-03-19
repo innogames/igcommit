@@ -74,20 +74,13 @@ class CheckCommitSummary(CommitCheck):
                 yield problem
             return
 
-        category_index = rest[:24].find(': ')
-        rest_index = category_index + len(': ')
-        if category_index >= 0 and len(rest) > rest_index:
-            for problem in self.get_category_problems(rest[:category_index]):
-                yield problem
-            rest = rest[rest_index:]
-
         for problem in self.get_summary_problems(rest):
             yield problem
 
     def get_revert_commit_problems(self, rest):
         rest = rest[len('Revert'):]
         if not rest.startswith(' "') or not rest.endswith('"'):
-            yield Severity.WARNING, 'ill-formatted revert commit'
+            yield Severity.WARNING, 'ill-formatted revert commit message'
 
     def get_commit_tag_problems(self, tags, rest):
         used_tags = []
@@ -109,6 +102,27 @@ class CheckCommitSummary(CommitCheck):
         if not rest.startswith(' '):
             yield Severity.WARNING, 'commit tags not separated with space'
 
+    def get_summary_problems(self, rest):
+        if not rest:
+            yield Severity.ERROR, 'no commit summary'
+            return
+
+        if len(rest) > 50:
+            yield Severity.WARNING, 'commit summary longer than 50 characters'
+
+        if '  ' in rest:
+            yield Severity.WARNING, 'multiple spaces'
+
+        category_index = rest[:24].find(': ')
+        rest_index = category_index + len(': ')
+        if category_index >= 0 and len(rest) > rest_index:
+            for problem in self.get_category_problems(rest[:category_index]):
+                yield problem
+            rest = rest[rest_index:]
+
+        for problem in self.get_title_problems(rest):
+            yield problem
+
     def get_category_problems(self, category):
         if not category[0].isalpha():
             yield Severity.WARNING, 'commit category starts with non-letter'
@@ -117,27 +131,21 @@ class CheckCommitSummary(CommitCheck):
         if category[-1] == ' ':
             yield Severity.WARNING, 'commit category ends with a space'
 
-    def get_summary_problems(self, rest):
+    def get_title_problems(self, rest):
         if not rest:
-            yield Severity.ERROR, 'no summary'
+            yield Severity.ERROR, 'no commit title'
             return
 
-        if len(rest) > 50:
-            yield Severity.WARNING, 'summary longer than 50 characters'
-
-        if '  ' in rest:
-            yield Severity.WARNING, 'multiple spaces'
-
         if not rest[0].isalpha():
-            yield Severity.WARNING, 'summary start with non-letter'
+            yield Severity.WARNING, 'commit title start with non-letter'
         if rest[-1] == '.':
-            yield Severity.WARNING, 'summary ends with a dot'
+            yield Severity.WARNING, 'commit title ends with a dot'
 
         first_word = rest.split(' ', 1)[0]
         if first_word.endswith('ed'):
-            yield Severity.WARNING, 'past tense used on summary'
+            yield Severity.WARNING, 'past tense used on commit title'
         if first_word.endswith('ing'):
-            yield Severity.WARNING, 'continuous tense used on summary'
+            yield Severity.WARNING, 'continuous tense used on commit title'
 
 
 class CheckChangedFilePaths(CommitCheck):
