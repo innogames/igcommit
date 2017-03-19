@@ -27,27 +27,39 @@ class CommitCheck(BaseCheck):
 class CheckCommitMessage(CommitCheck):
     def get_problems(self):
         for line_id, line in enumerate(self.commit.get_message().splitlines()):
-            if line.rstrip() != line:
-                line = line.rstrip()
-                yield (
-                    Severity.ERROR,
-                    'line {}: trailing space'.format(line_id + 1)
-                )
-
             if line_id == 0:
                 continue
             elif line_id == 1:
-                if line:
+                if line.strip():
                     yield Severity.ERROR, 'no single line commit summary'
             else:
                 if line.startswith('    ') or line.startswith('>'):
                     continue
 
-            if len(line) > 72:
-                yield (
-                    Severity.WARNING,
-                    'line {}: longer than 72'.format(line_id + 1)
-                )
+            if line:
+                for problem in self.get_line_problems(line_id + 1, line):
+                    yield problem
+
+    def get_line_problems(self, line_number, line):
+        if line.rstrip() != line:
+            line = line.rstrip()
+            yield (
+                Severity.ERROR,
+                'line {}: trailing space'.format(line_number)
+            )
+
+        if line.lstrip() != line:
+            line = line.lstrip()
+            yield (
+                Severity.WARNING,
+                'line {}: leading space'.format(line_number)
+            )
+
+        if len(line) > 72:
+            yield (
+                Severity.WARNING,
+                'line {}: longer than 72'.format(line_number)
+            )
 
 
 class CheckCommitSummary(CommitCheck):
