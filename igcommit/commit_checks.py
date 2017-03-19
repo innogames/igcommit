@@ -27,7 +27,8 @@ class CommitCheck(BaseCheck):
 class CheckCommitMessage(CommitCheck):
     def get_problems(self):
         for line_id, line in enumerate(self.commit.get_message().splitlines()):
-            if line and line[-1] == ' ':
+            if line.rstrip() != line:
+                line = line.rstrip()
                 yield (
                     Severity.ERROR,
                     'line {}: trailing space'.format(line_id + 1)
@@ -135,10 +136,10 @@ class CheckCommitSummary(CommitCheck):
     def get_category_problems(self, category):
         if not category[0].isalpha():
             yield Severity.WARNING, 'commit category starts with non-letter'
-        if category != category.lower():
+        if category.lower() != category:
             yield Severity.WARNING, 'commit category has upper-case letter'
-        if category[-1] == ' ':
-            yield Severity.WARNING, 'commit category ends with a space'
+        if category.rstrip() != category:
+            yield Severity.WARNING, 'commit category with trailing space'
 
     def get_title_problems(self, rest):
         if not rest:
@@ -147,7 +148,7 @@ class CheckCommitSummary(CommitCheck):
 
         if not rest[0].isalpha():
             yield Severity.WARNING, 'commit title start with non-letter'
-        if rest[-1] == '.':
+        if rest.endswith('.'):
             yield Severity.WARNING, 'commit title ends with a dot'
 
         first_word = rest.split(' ', 1)[0]
