@@ -27,15 +27,21 @@ class CommitCheck(BaseCheck):
 class CheckCommitMessage(CommitCheck):
     def get_problems(self):
         for line_id, line in enumerate(self.commit.get_message().splitlines()):
-            if line_id == 1 and line:
-                yield Severity.ERROR, 'summary extends the first line'
             if line and line[-1] == ' ':
                 yield (
                     Severity.ERROR,
                     'line {}: trailing space'.format(line_id + 1)
                 )
-            if line_id > 1 and line.startswith('    ') or line.startswith('>'):
+
+            if line_id == 0:
                 continue
+            elif line_id == 1:
+                if line:
+                    yield Severity.ERROR, 'no single line commit summary'
+            else:
+                if line.startswith('    ') or line.startswith('>'):
+                    continue
+
             if len(line) > 72:
                 yield (
                     Severity.WARNING,
@@ -107,7 +113,10 @@ class CheckCommitSummary(CommitCheck):
             yield Severity.ERROR, 'no commit summary'
             return
 
-        if len(rest) > 50:
+        rest_len = len(rest)
+        if rest_len > 72:
+            yield Severity.ERROR, 'commit summary longer than 72 characters'
+        elif rest_len > 50:
             yield Severity.WARNING, 'commit summary longer than 50 characters'
 
         if '  ' in rest:
