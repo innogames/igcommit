@@ -234,15 +234,19 @@ class CommittedFile(object):
         content = self.get_content()
         if content.startswith(b'#!'):
             return content[len(b'#!'):].split(None, 1)[0].decode()
-        return ''
+        return None
 
     def get_shebang_exe(self):
         """Get the executable from the shebang"""
         shebang = self.get_shebang()
         if shebang == '/usr/bin/env':
-            rest = self.get_content()[len(b'#!/usr/bin/env'):].lstrip()
-            return rest.split(None, 1)[0].decode()
-        return shebang.rsplit('/', 1)[-1]
+            rest = self.get_content().splitlines()[0][len(b'#!/usr/bin/env'):]
+            rest_split = rest.split(None, 1)
+            if rest_split:
+                return rest_split[0].decode()
+        elif shebang:
+            return shebang.rsplit('/', 1)[-1]
+        return None
 
     def write(self):
         """Write the file contents to the location its supposed to be

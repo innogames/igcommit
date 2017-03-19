@@ -59,34 +59,30 @@ class CheckExecutable(CommittedFileCheck):
     to warn about it, as it is very common to omit executable bit on Git.
     However, it would be expensive to look at the content of every file.
     """
-    def prepare(self, obj):
-        new = super(CheckExecutable, self).prepare(obj)
-        if not new or (
-            isinstance(obj, CommittedFile) and not obj.owner_can_execute()
-        ):
-            return None
-        return new
-
     def get_problems(self):
         shebang = self.committed_file.get_shebang()
-        if not shebang:
-            yield Severity.ERROR, 'no shebang'
-            return
+        if self.committed_file.owner_can_execute():
+            if shebang:
+                for problem in self.get_shebang_problems(shebang):
+                    yield problem
 
+                for problem in self.get_exe_problems():
+                    yield problem
+            else:
+                yield Severity.ERROR, 'executable file without shebang'
+        elif shebang:
+            yield Severity.ERROR, 'non-executable file with shebang'
+
+    def get_shebang_problems(self, shebang):
         if not shebang.startswith('/'):
             yield (
                 Severity.ERROR,
                 'shebang executable {} is not full path'.format(shebang)
             )
-            return
-
-        if shebang.startswith('/usr') and shebang != '/usr/bin/env':
+        elif shebang.startswith('/usr') and shebang != '/usr/bin/env':
             yield (
                 Severity.WARNING, 'shebang is not portable (use /usr/bin/env)'
             )
-
-        for problem in self.get_exe_problems():
-            yield problem
 
     def get_exe_problems(self):
         extension = self.committed_file.get_extension()
