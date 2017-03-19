@@ -4,9 +4,10 @@ Copyright (c) 2016, InnoGames GmbH
 """
 
 from re import compile
+from subprocess import Popen, PIPE, STDOUT
 
 from igcommit.base_check import BaseCheck, CheckState, Severity
-from igcommit.git import Commit, CommittedFile, check_returncode
+from igcommit.git import Commit, CommittedFile
 from igcommit.utils import get_exe_path
 
 FILE_EXTENSIONS = {
@@ -72,17 +73,14 @@ class CheckExecutable(CommittedFileCheck):
             yield Severity.ERROR, 'no shebang'
             return
 
-        path = shebang.split(None, 1)[0]
-        if not path.startswith('/'):
+        if not shebang.startswith('/'):
             yield (
                 Severity.ERROR,
-                'shebang executable {} is not full path'.format(path)
+                'shebang executable {} is not full path'.format(shebang)
             )
-        elif path == '/usr/bin/env':
-            if shebang == path:
-                yield Severity.ERROR, '/usr/bin/env must have an argument'
-                return
-        elif path.startswith('/usr'):
+            return
+
+        if shebang.startswith('/usr') and shebang != '/usr/bin/env':
             yield (
                 Severity.WARNING, 'shebang is not portable (use /usr/bin/env)'
             )
@@ -100,7 +98,10 @@ class CheckExecutable(CommittedFileCheck):
                 yield Severity.WARNING, 'general executable name'
             return
 
-        exe = self.committed_file.get_exe()
+        exe = self.committed_file.get_shebang_exe()
+        if not exe:
+            yield Severity.ERROR, 'no shebang executable'
+
         if extension in FILE_EXTENSIONS:
             if not FILE_EXTENSIONS[extension].search(exe):
                 yield (
@@ -133,13 +134,13 @@ class CheckSymlink(CommittedFileCheck):
     def prepare(self, obj):
         new = super(CheckSymlink, self).prepare(obj)
         if not new or (
-            isinstance(obj, CommittedFile) and not obj.get_symlink_target()
+            isinstance(obj, CommittedFile) and not obj.symlink()
         ):
             return None
         return new
 
     def get_problems(self):
-        symlink_target = self.committed_file.get_symlink_target()
+        symlink_target = self.committed_file.get_content()
         target_file = CommittedFile(symlink_target, self.committed_file.commit)
         if not target_file.exists():
             yield (
@@ -158,7 +159,7 @@ class CommittedFileByExtensionCheck(CommittedFileCheck):
             return new
 
         # There is no point of checking links by their type.
-        if obj.get_symlink_target():
+        if obj.symlink():
             return None
 
         # All instances of this must specify a file extension.
@@ -173,7 +174,7 @@ class CommittedFileByExtensionCheck(CommittedFileCheck):
         if (
             new.extension in FILE_EXTENSIONS and
             obj.owner_can_execute() and
-            FILE_EXTENSIONS[new.extension].search(obj.get_exe())
+            FILE_EXTENSIONS[new.extension].search(obj.get_shebang_exe())
         ):
             return new
 
@@ -240,9 +241,14 @@ class CheckCommand(CommittedFileByExtensionCheck):
         return config_exists
 
     def _prepare_proc(self):
-        self._proc = self.committed_file.pass_content(
-            [self.get_exe_path()] + self.args[1:]
+        self._proc = Popen(
+            [self.get_exe_path()] + self.args[1:],
+            stdin=PIPE,
+            stdout=PIPE,
+            stderr=STDOUT,
         )
+        with self._proc.stdin as fd:
+            fd.write(self.committed_file.get_content())
 
     def get_problems(self):
         line_buffer = []
@@ -254,13 +260,13 @@ class CheckCommand(CommittedFileByExtensionCheck):
                 continue
             yield self._format_problem(line_buffer.pop(0).strip().decode())
 
-        if self._proc.wait() != 0:
-            check_returncode(self._proc.content_proc)
-            if (
-                not self.bogus_return_code and
-                not self.committed_file.commit.content_can_fail()
-            ):
-                self.set_state(CheckState.FAILED)
+        return_code = self._proc.wait()
+        if (
+            return_code != 0 and
+            not self.bogus_return_code and
+            not self.committed_file.commit.content_can_fail()
+        ):
+            self.set_state(CheckState.FAILED)
 
     def _format_problem(self, line):
         """We are piping the source from Git to the commands.  We want to
