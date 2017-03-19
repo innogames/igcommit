@@ -108,7 +108,7 @@ class CheckExecutable(CommittedFileCheck):
                 return
 
             # We are white-listing general names to have a file extension.
-            name = self.committed_file.get_filename()[:(len(extension) + 1)]
+            name = self.committed_file.get_filename()[:-(len(extension) + 1)]
             if name not in GENERAL_EXECUTABLE_NAMES:
                 yield Severity.WARNING, 'redundant file extension'
             return
