@@ -26,7 +26,7 @@ class CommitCheck(BaseCheck):
 
 class CheckCommitMessage(CommitCheck):
     def get_problems(self):
-        for line_id, line in enumerate(self.commit.get_message().splitlines()):
+        for line_id, line in enumerate(self.commit.get_message_lines()):
             if line_id == 0:
                 continue
             elif line_id == 1:
