@@ -248,13 +248,14 @@ class CheckCommand(CommittedFileByExtensionCheck):
 
     def get_problems(self):
         line_buffer = []
-        for line_id, line in enumerate(self._proc.stdout):
-            if line_id < self.header:
-                continue
-            line_buffer.append(line)
-            if len(line_buffer) <= self.footer:
-                continue
-            yield self._format_problem(line_buffer.pop(0).strip().decode())
+        with self._proc.stdout as fd:
+            for line_id, line in enumerate(fd):
+                if line_id < self.header:
+                    continue
+                line_buffer.append(line)
+                if len(line_buffer) <= self.footer:
+                    continue
+                yield self._format_problem(line_buffer.pop(0).strip().decode())
 
         return_code = self._proc.wait()
         if (
