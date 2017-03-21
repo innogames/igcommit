@@ -57,7 +57,7 @@ class Commit(object):
             '--not',
             '--all',
             '--reverse',
-        ]).decode()
+        ]).decode('utf-8')
         commit_list = CommitList([], ref_path)
         for commit_id in output.splitlines():
             commit = Commit(commit_id, commit_list)
@@ -83,7 +83,7 @@ class Commit(object):
             elif line.startswith(b'committer '):
                 self._committer = Contribution.parse(line[len(b'committer '):])
         for line in lines:
-            self._message_lines.append(line.decode())
+            self._message_lines.append(line.decode('utf-8'))
         self.content_fetched = True
 
     def get_parents(self):
@@ -140,7 +140,7 @@ class Commit(object):
                 '--no-renames',         # Get renames as additions
                 '--diff-filter=AM',     # Only additions and modifications
                 self.commit_id,
-            ]).decode()
+            ]).decode('utf-8')
             changed_files = []
             for line in output.splitlines():
                 line_split = line.split()
@@ -167,7 +167,7 @@ class Contribution(object):
         name, line = line.split(b' <', 1)
         email, line = line.split(b'> ', 1)
         timestamp, line = line.split(b' ', 1)
-        return cls(name.decode('utf8'), email.decode(), int(timestamp))
+        return cls(name.decode('utf-8'), email.decode('utf-8'), int(timestamp))
 
     def get_email_domain(self):
         return self.email.split('@', 1)[-1]
@@ -233,7 +233,7 @@ class CommittedFile(object):
         """Get the shebang from the file content"""
         content = self.get_content()
         if content.startswith(b'#!'):
-            return content[len(b'#!'):].split(None, 1)[0].decode()
+            return content[len(b'#!'):].split(None, 1)[0].decode('utf-8')
         return None
 
     def get_shebang_exe(self):
@@ -243,7 +243,7 @@ class CommittedFile(object):
             rest = self.get_content().splitlines()[0][len(b'#!/usr/bin/env'):]
             rest_split = rest.split(None, 1)
             if rest_split:
-                return rest_split[0].decode()
+                return rest_split[0].decode('utf-8')
         elif shebang:
             return shebang.rsplit('/', 1)[-1]
         return None

@@ -255,7 +255,7 @@ class CheckCommand(CommittedFileByExtensionCheck):
                 line_buffer.append(line)
                 if len(line_buffer) <= self.footer:
                     continue
-                yield self._format_problem(line_buffer.pop(0).strip().decode())
+                yield self._format_problem(line_buffer.pop(0))
 
         return_code = self._proc.wait()
         if (
@@ -270,34 +270,35 @@ class CheckCommand(CommittedFileByExtensionCheck):
         hide the file path from the users as we show it already on the headers.
         """
         prefix = ''
+        rest = line.strip().decode('utf-8')
 
-        line_split = line.split(':', 3)
+        rest_split = rest.split(':', 3)
         if (
-            len(line_split) == 4 and
-            len(line_split[0]) >= len('stdin') and
-            line_split[1].isdigit() and
-            line_split[2].isdigit()
+            len(rest_split) == 4 and
+            len(rest_split[0]) >= len('stdin') and
+            rest_split[1].isdigit() and
+            rest_split[2].isdigit()
         ):
-            prefix = 'line {}: col {}: '.format(*line_split[1:3])
-            line = line_split[3].strip()
+            prefix = 'line {}: col {}: '.format(*rest_split[1:3])
+            rest = rest_split[3].strip()
         else:
-            if len(line_split) >= 2 and 'stdin' in line_split[0].lower():
-                line = ':'.join(line_split[1:]).strip()
-            if line.startswith('line '):
-                line_split = line.split(' ', 2)
-                line_num = line_split[1].strip(':,')
+            if len(rest_split) >= 2 and 'stdin' in rest_split[0].lower():
+                rest = ':'.join(rest_split[1:]).strip()
+            if rest.startswith('line '):
+                rest_split = rest.split(' ', 2)
+                line_num = rest_split[1].strip(':,')
                 if line_num.isdigit():
                     prefix += 'line ' + line_num + ': '
-                    line = ' '.join(line_split[2:]).strip(':,')
-            if line.startswith('col '):
-                line_split = line.split(' ', 2)
-                col_num = line_split[1].strip(':,')
+                    rest = ' '.join(rest_split[2:]).strip(':,')
+            if rest.startswith('col '):
+                rest_split = rest.split(' ', 2)
+                col_num = rest_split[1].strip(':,')
                 if col_num.isdigit():
                     prefix += 'col ' + col_num + ': '
-                    line = ' '.join(line_split[2:]).strip(':,')
+                    rest = ' '.join(rest_split[2:]).strip(':,')
 
-        severity, line = Severity.split(line)
-        return severity, prefix + line
+        severity, rest = Severity.split(rest)
+        return severity, prefix + rest
 
     def __str__(self):
         return '{} "{}" on {}'.format(
@@ -319,7 +320,7 @@ class FormatCheck(CommittedFileByExtensionCheck):
     def get_problems(self):
         assert self.load_func and self.exception_cls
         try:
-            self.load_func(self.committed_file.get_content().decode())
+            self.load_func(self.committed_file.get_content().decode('utf-8'))
         except self.exception_cls as error:
             yield Severity.ERROR, str(error)
 
