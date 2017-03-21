@@ -3,7 +3,7 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
-from subprocess import check_output, CalledProcessError, Popen, PIPE
+from subprocess import check_output
 
 from igcommit.utils import get_exe_path
 
@@ -33,8 +33,7 @@ class Commit(object):
     def __init__(self, commit_id, commit_list=None):
         self.commit_id = commit_id
         self.commit_list = commit_list
-        self._content_proc = None
-        self._message = None
+        self.content_fetched = False
         self.changed_files = None
 
     def __str__(self):
@@ -66,34 +65,39 @@ class Commit(object):
         return commit_list
 
     def _fetch_content(self):
-        self._content_proc = Popen(
-            [git_exe_path, 'cat-file', '-p', self.commit_id],
-            stdout=PIPE,
+        content = check_output(
+            [git_exe_path, 'cat-file', '-p', self.commit_id]
         )
         self._parents = []
+        self._message_lines = []
         # The commit message starts after the empty line.  We iterate until
         # we find one, and then consume the rest as the message.
-        for line in iter(self._content_proc.stdout.readline, b'\n'):
+        lines = iter(content.splitlines())
+        for line in lines:
+            if not line:
+                break
             if line.startswith(b'parent '):
                 self._parents.append(Commit(line[len(b'parent '):].rstrip()))
-            if line.startswith(b'author '):
+            elif line.startswith(b'author '):
                 self._author = Contribution.parse(line[len(b'author '):])
-            if line.startswith(b'committer '):
+            elif line.startswith(b'committer '):
                 self._committer = Contribution.parse(line[len(b'committer '):])
-            check_returncode(self._content_proc)
+        for line in lines:
+            self._message_lines.append(line.decode())
+        self.content_fetched = True
 
     def get_parents(self):
-        if not self._content_proc:
+        if not self.content_fetched:
             self._fetch_content()
         return self._parents
 
     def get_author(self):
-        if not self._content_proc:
+        if not self.content_fetched:
             self._fetch_content()
         return self._author
 
     def get_committer(self):
-        if not self._content_proc:
+        if not self.content_fetched:
             self._fetch_content()
         return self._committer
 
@@ -101,17 +105,13 @@ class Commit(object):
         yield self.get_author()
         yield self._committer
 
-    def get_message(self):
-        if not self._content_proc:
+    def get_message_lines(self):
+        if not self.content_fetched:
             self._fetch_content()
-        if not self._message:
-            self._message = self._content_proc.stdout.read().decode('utf8')
-            check_returncode(self._content_proc)
-        return self._message
+        return self._message_lines
 
     def get_summary(self):
-        for line in self.get_message().splitlines():
-            return line
+        return self.get_message_lines()[0]
 
     def parse_tags(self):
         tags = []
@@ -258,13 +258,3 @@ class CommittedFile(object):
         """
         with open(self.path, 'wb') as fd:
             fd.write(self.get_content())
-
-
-def check_returncode(proc):
-    if proc.returncode is None:
-        proc.poll()
-        if proc.returncode is None:
-            return
-
-    if proc.returncode != 0:
-        raise CalledProcessError(proc.returncode, proc.args)
