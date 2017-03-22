@@ -3,6 +3,8 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
+from __future__ import unicode_literals
+
 from re import compile
 from subprocess import Popen, PIPE, STDOUT
 

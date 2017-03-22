@@ -3,6 +3,8 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
+from __future__ import unicode_literals
+
 from time import time
 
 from igcommit.base_check import BaseCheck, Severity

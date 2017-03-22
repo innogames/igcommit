@@ -3,6 +3,8 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
+from __future__ import unicode_literals
+
 from collections import defaultdict
 from fileinput import input
 from sys import stdout

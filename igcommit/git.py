@@ -3,6 +3,8 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
+from __future__ import unicode_literals
+
 from subprocess import check_output
 
 from igcommit.utils import get_exe_path

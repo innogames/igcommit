@@ -3,6 +3,8 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
+from __future__ import unicode_literals
+
 from igcommit.commit_list_checks import (
     CheckDuplicateCommitSummaries,
     CheckMisleadingMergeCommit,

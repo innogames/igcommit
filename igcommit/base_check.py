@@ -3,6 +3,8 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
+from __future__ import unicode_literals
+
 from enum import IntEnum
 
 
@@ -73,7 +75,7 @@ class BaseCheck(object):
             if not header_printed:
                 print('=== {} ==='.format(self))
                 header_printed = True
-            print(severity.name + ': ' + problem)
+            print('{}: {}'.format(severity.name, problem))
             if severity <= Severity.ERROR:
                 self.set_state(CheckState.FAILED)
         if header_printed:
