@@ -3,11 +3,11 @@
 Copyright (c) 2016, InnoGames GmbH
 """
 
-from __future__ import unicode_literals
+from __future__ import print_function, unicode_literals
 
 from collections import defaultdict
 from fileinput import input
-from sys import stdout
+from sys import stdout, stderr
 from traceback import print_exc
 
 from igcommit.base_check import CheckState, prepare_checks
@@ -102,6 +102,8 @@ def main():
         # Flush the problems we have printed so far to avoid the traceback
         # appearing in between them.
         stdout.flush()
+        print(file=stderr)
+        print('An error occurred, but the commits are accepted.', file=stderr)
         print_exc()
     else:
         if state >= CheckState.FAILED:
