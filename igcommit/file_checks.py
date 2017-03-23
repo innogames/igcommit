@@ -163,18 +163,16 @@ class CommittedFileByExtensionCheck(CommittedFileCheck):
         # All instances of this must specify a file extension.
         assert new.extension
 
-        # We are being prepared for a committed file as last.  In this step,
+        # We are being prepared for a committed file at last.  In this step,
         # we need to match the file with the specified file extension.
         # We first check the extension from the name of the file, and then
-        # from the shebang of the file, if it is executable.
+        # from the shebang of the file.
         if obj.get_extension() == new.extension:
             return new
-        if (
-            new.extension in FILE_EXTENSIONS and
-            obj.owner_can_execute() and
-            FILE_EXTENSIONS[new.extension].search(obj.get_shebang_exe())
-        ):
-            return new
+        if new.extension in FILE_EXTENSIONS:
+            exe = obj.get_shebang_exe()
+            if exe and FILE_EXTENSIONS[new.extension].search(exe):
+                return new
 
         return None
 
