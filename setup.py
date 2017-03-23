@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """igcommit - Setup
 
 Copyright (c) 2017, InnoGames GmbH

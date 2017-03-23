@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """igcommit - Pre-receive hook routines
 
 Copyright (c) 2016, InnoGames GmbH

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """igcommit - Configuration of the checks
 
 Copyright (c) 2016, InnoGames GmbH

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """igcommit - Checks on Git commit lists
 
 Copyright (c) 2016, InnoGames GmbH
