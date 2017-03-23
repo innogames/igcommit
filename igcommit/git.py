@@ -6,6 +6,7 @@ Copyright (c) 2016, InnoGames GmbH
 
 from __future__ import unicode_literals
 
+from os.path import isabs, join as joinpath, normpath
 from subprocess import check_output
 
 from igcommit.utils import get_exe_path
@@ -250,6 +251,19 @@ class CommittedFile(object):
         elif shebang:
             return shebang.rsplit('/', 1)[-1]
         return None
+
+    def get_symlink_target(self):
+        """Get the symlink target as same kind of instance
+
+        We just return None, if the target has no chance to be on
+        the repository."""
+        content = self.get_content()
+        if isabs(content):
+            return None
+        path = normpath(joinpath(self.path, '..', content.decode('utf-8')))
+        if path.startswith('..'):
+            return None
+        return type(self)(path, self.commit)
 
     def write(self):
         """Write the file contents to the location its supposed to be

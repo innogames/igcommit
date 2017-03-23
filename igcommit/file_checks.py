@@ -139,13 +139,12 @@ class CheckSymlink(CommittedFileCheck):
         return new
 
     def get_problems(self):
-        symlink_target = self.committed_file.get_content()
-        target_file = CommittedFile(symlink_target, self.committed_file.commit)
-        if not target_file.exists():
+        target = self.committed_file.get_symlink_target()
+        if not target or not target.exists():
             yield (
                 Severity.WARNING,
-                'symlink target "{}" doesn\'t exist on repository'
-                .format(symlink_target)
+                'symlink target {} doesn\'t exist on repository'
+                .format(target)
             )
 
 
