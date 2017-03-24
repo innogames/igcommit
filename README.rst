@@ -1,17 +1,17 @@
 Git Pre-Receive Hook to Validate Commits
 ========================================
 
-The developers tend to be obsessed about code style.  It is exhausting to edit
-files again and again to have a consistent style.  This project provides
-a Git pre-receive hook to validate pushed commits on the Git server side.
-The hook avoids all issues by rejecting any commit with inconsistent style
-to get in to the repository in the first place.
+It is exhausting to edit files again and again to have a consistent style.
+This project provides a Git pre-receive hook to validate pushed commits on
+the Git server side.  The hook avoids all issues by rejecting any commit
+not matching the rules to get in to the repository in the first place.
 
-The pre-receive hook searches runs some checks on the commits on its own,
-and searches for programming language specific syntax checkers on the PATH.
-The process is pretty fast, because  only the changed files on the pushed
-commits are passed to the syntax checkers in parallel.  It wouldn't slow you
-down unless your commits are touching hundreds of files.
+The pre-receive hook runs some checks on commits on its own, and searches
+for programming language specific syntax checkers on the PATH of the server
+to check changed files with them.  The process is pretty fast, because only
+the added and modified files on the pushed commits are passed to the syntax
+checkers, also in parallel.  It wouldn't slow you down unless your commits
+are touching hundreds of files.
 
 
 Installation
