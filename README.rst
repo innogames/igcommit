@@ -160,6 +160,16 @@ Version 2.0
     * Reduce commit message line length limits
     * Complain about file extensions on executables
 
+Version 2.1
+    * Add [TEMP] to recognized commit tags
+    * Fix getting the changes of the initial commit (Zheng Wei)
+    * Fix various file descriptor leaks
+    * Check commit summaries more strictly
+    * Check shebangs of non-executable files too
+    * Don't check on empty file contents
+    * Improve unicode support on Python 2
+    * Fix checking symlink targets
+
 
 License
 -------
