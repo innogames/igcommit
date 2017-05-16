@@ -67,6 +67,7 @@ class CheckCommitMessage(CommitCheck):
 
 class CheckCommitSummary(CommitCheck):
     commit_tags = {
+        'BREAKING',
         'BUGFIX',
         'CLEANUP',
         'FEATURE',
