@@ -120,7 +120,7 @@ checks.append(CheckCommand(
 # JavaScript
 package_config = CommittedFile('package.json')
 eslint_check = CheckCommand(
-    args=['eslint', '--format=unix', '--quite', '--stdin'],
+    args=['eslint', '--format=unix', '--quiet', '--stdin'],
     extension='js',
     config_files=[
         package_config,
@@ -128,6 +128,10 @@ eslint_check = CheckCommand(
         CommittedFile('.eslint.yaml'),
         CommittedFile('.eslint.yml'),
         CommittedFile('.eslint.json'),
+        CommittedFile('.eslintrc.js'),
+        CommittedFile('.eslintrc.yaml'),
+        CommittedFile('.eslintrc.yml'),
+        CommittedFile('.eslintrc.json'),
     ],
     config_required=True,
 )
