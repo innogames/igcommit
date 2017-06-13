@@ -41,7 +41,8 @@ Features
 * Check commit summary formatting
 * Validate commit tags against a list ``[BUGFIX]``, ``[FEATURE]``, ``[WIP]``...
 * Check for changed file paths
-* Accept commits tagged as ``[HOTFIX]``, ``[MESS]`` or ``[WIP]`` with issues
+* Accept commits tagged as ``[HOTFIX]``, ``[MESS]``, ``[TEMP]``, or ``[WIP]``
+  with issues
 * Check executable bits and shebangs
 * Check symlinks
 * Check CSS files with ``csslint``
