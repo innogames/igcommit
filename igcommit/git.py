@@ -211,6 +211,9 @@ class CommittedFile(object):
     def changed(self):
         return self in self.commit.get_changed_files()
 
+    def regular(self):
+        return self.mode[1] == '1'
+
     def symlink(self):
         return self.mode[1] == '2'
 
@@ -222,9 +225,9 @@ class CommittedFile(object):
         return self.path.rsplit('/', 1)[-1]
 
     def get_extension(self):
-        if '.' in self.path:
-            return self.path.rsplit('.', 1)[1]
-        return None
+        if '.' not in self.path:
+            return None
+        return self.path.rsplit('.', 1)[1]
 
     def get_content(self):
         """Get the file content as binary"""
@@ -236,22 +239,24 @@ class CommittedFile(object):
 
     def get_shebang(self):
         """Get the shebang from the file content"""
+        if not self.regular():
+            return None
         content = self.get_content()
-        if content.startswith(b'#!'):
-            return content[len(b'#!'):].split(None, 1)[0].decode('utf-8')
-        return None
+        if not content.startswith(b'#!'):
+            return None
+        return content[len(b'#!'):].split(None, 1)[0].decode('utf-8')
 
     def get_shebang_exe(self):
         """Get the executable from the shebang"""
         shebang = self.get_shebang()
+        if not shebang:
+            return None
         if shebang == '/usr/bin/env':
             rest = self.get_content().splitlines()[0][len(b'#!/usr/bin/env'):]
             rest_split = rest.split(None, 1)
             if rest_split:
                 return rest_split[0].decode('utf-8')
-        elif shebang:
-            return shebang.rsplit('/', 1)[-1]
-        return None
+        return shebang.rsplit('/', 1)[-1]
 
     def get_symlink_target(self):
         """Get the symlink target as same kind of instance

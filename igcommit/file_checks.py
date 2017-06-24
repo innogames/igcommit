@@ -56,15 +56,12 @@ class CommittedFileCheck(BaseCheck):
 class CheckExecutable(CommittedFileCheck):
     """Special checks for executable files
 
-    Git stores executable bits of the files.  We are running these checks only
-    on the files executable bit is set.  It would have been nice to check
-    the files which don't have this bit set, but has a shebang, at least
-    to warn about it, as it is very common to omit executable bit on Git.
-    However, it would be expensive to look at the content of every file.
+    Git stores executable bits of the files.  We are checking them together
+    with the shebangs from the file contents.
     """
     def get_problems(self):
-        shebang = self.committed_file.get_shebang()
         if self.committed_file.owner_can_execute():
+            shebang = self.committed_file.get_shebang()
             if shebang:
                 for problem in self.get_shebang_problems(shebang):
                     yield problem
@@ -73,8 +70,13 @@ class CheckExecutable(CommittedFileCheck):
                     yield problem
             else:
                 yield Severity.ERROR, 'executable file without shebang'
-        elif shebang:
-            yield Severity.WARNING, 'non-executable file with shebang'
+        else:
+            # We are not bothering to check the shebang for unknown file
+            # extensions.
+            extension = self.committed_file.get_extension()
+            if not extension or extension in FILE_EXTENSIONS:
+                if self.committed_file.get_shebang():
+                    yield Severity.WARNING, 'non-executable file with shebang'
 
     def get_shebang_problems(self, shebang):
         if not shebang.startswith('/'):
@@ -159,16 +161,14 @@ class CommittedFileByExtensionCheck(CommittedFileCheck):
         # All instances of this must specify a file extension.
         assert new.extension
 
-        # There is no point of checking links by their type.
-        if obj.symlink():
-            return None
-
-        # We are being prepared for a committed file at last.  In this step,
-        # we need to match the file with the specified file extension.
-        # We first check the extension from the name of the file, and then
-        # from the shebang of the file.
-        if obj.get_extension() == new.extension:
+        # First, we try to match with the file extension.  We should not
+        # continue for symlinks, because we cannot and should not validate
+        # the file contents of them.
+        if obj.get_extension() == new.extension and not obj.symlink():
             return new
+
+        # Then, we try to match with the shebang from the file content,
+        # if we know the shebang pattern.
         if new.extension in FILE_EXTENSIONS:
             exe = obj.get_shebang_exe()
             if exe and FILE_EXTENSIONS[new.extension].search(exe):
