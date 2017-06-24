@@ -6,29 +6,11 @@ Copyright (c) 2016, InnoGames GmbH
 
 from __future__ import unicode_literals
 
-from re import compile
 from subprocess import Popen, PIPE, STDOUT
 
 from igcommit.base_check import BaseCheck, CheckState, Severity
 from igcommit.git import Commit, CommittedFile
 from igcommit.utils import get_exe_path
-
-FILE_EXTENSIONS = {
-    'php': compile('^php'),
-    'pp': compile('^puppet'),
-    'py': compile('^python'),
-    'rb': compile('^ruby'),
-    'sh': compile('sh$'),
-    'js': compile('js$'),
-}
-
-GENERAL_EXECUTABLE_NAMES = [
-    'exec',
-    'go',
-    'install',
-    'run',
-    'setup',
-]
 
 
 class CommittedFileCheck(BaseCheck):
@@ -59,6 +41,9 @@ class CheckExecutable(CommittedFileCheck):
     Git stores executable bits of the files.  We are checking them together
     with the shebangs from the file contents.
     """
+    file_extensions = {}
+    general_names = []
+
     def get_problems(self):
         if self.committed_file.owner_can_execute():
             shebang = self.committed_file.get_shebang()
@@ -74,7 +59,7 @@ class CheckExecutable(CommittedFileCheck):
             # We are not bothering to check the shebang for unknown file
             # extensions.
             extension = self.committed_file.get_extension()
-            if not extension or extension in FILE_EXTENSIONS:
+            if not extension or extension in self.file_extensions:
                 if self.committed_file.get_shebang():
                     yield Severity.WARNING, 'non-executable file with shebang'
 
@@ -93,9 +78,9 @@ class CheckExecutable(CommittedFileCheck):
         extension = self.committed_file.get_extension()
         if not extension:
             name = self.committed_file.get_filename()
-            if name in FILE_EXTENSIONS:
+            if name in self.file_extensions:
                 yield Severity.ERROR, 'file extension without a name'
-            if name in GENERAL_EXECUTABLE_NAMES:
+            if name in self.general_names:
                 yield Severity.WARNING, 'general executable name'
             return
 
@@ -103,25 +88,25 @@ class CheckExecutable(CommittedFileCheck):
         if not exe:
             yield Severity.ERROR, 'no shebang executable'
 
-        if extension in FILE_EXTENSIONS:
-            if not FILE_EXTENSIONS[extension].search(exe):
+        if extension in self.file_extensions:
+            if not self.file_extensions[extension].search(exe):
                 yield (
                     Severity.ERROR,
                     'shebang executable "{}" doesn\'t match pattern "{}"'
-                    .format(exe, FILE_EXTENSIONS[extension].pattern)
+                    .format(exe, self.file_extensions[extension].pattern)
                 )
                 return
 
             # We are white-listing general names to have a file extension.
             name = self.committed_file.get_filename()[:-(len(extension) + 1)]
-            if name not in GENERAL_EXECUTABLE_NAMES:
+            if name not in self.general_names:
                 yield Severity.WARNING, 'redundant file extension'
             return
 
         # If the file has an extension we don't know about, we test if
         # the executable matches with any extension we know.  If so, it
         # should probably now have this extension.
-        for key, pattern in FILE_EXTENSIONS.items():
+        for key, pattern in self.file_extensions.items():
             if pattern.search(exe):
                 yield (
                     Severity.WARNING,
@@ -152,6 +137,7 @@ class CheckSymlink(CommittedFileCheck):
 
 class CommittedFileByExtensionCheck(CommittedFileCheck):
     extension = None
+    exe_pattern = None
 
     def prepare(self, obj):
         new = super(CommittedFileByExtensionCheck, self).prepare(obj)
@@ -168,10 +154,10 @@ class CommittedFileByExtensionCheck(CommittedFileCheck):
             return new
 
         # Then, we try to match with the shebang from the file content,
-        # if we know the shebang pattern.
-        if new.extension in FILE_EXTENSIONS:
+        # if we know the executable pattern.
+        if self.exe_pattern:
             exe = obj.get_shebang_exe()
-            if exe and FILE_EXTENSIONS[new.extension].search(exe):
+            if exe and self.exe_pattern.search(exe):
                 return new
 
         return None

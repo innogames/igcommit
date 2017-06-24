@@ -6,6 +6,8 @@ Copyright (c) 2016, InnoGames GmbH
 
 from __future__ import unicode_literals
 
+from re import compile as re_compile
+
 from igcommit.commit_list_checks import (
     CheckDuplicateCommitSummaries,
     CheckMisleadingMergeCommit,
@@ -41,7 +43,24 @@ checks.append(CheckCommitSummary())
 checks.append(CheckChangedFilePaths())
 
 # File meta checks
-checks.append(CheckExecutable())
+file_extensions = {
+    'php': re_compile('^php'),
+    'pp': re_compile('^puppet'),
+    'py': re_compile('^python'),
+    'rb': re_compile('^ruby'),
+    'sh': re_compile('sh$'),
+    'js': re_compile('js$'),
+}
+checks.append(CheckExecutable(
+    file_extensions=file_extensions,
+    general_names=[
+        'exec',
+        'go',
+        'install',
+        'run',
+        'setup',
+    ],
+))
 checks.append(CheckSymlink())
 
 # CSS
@@ -76,10 +95,12 @@ checks.append(CheckCommand(
         '--vardir=/tmp',
     ],
     extension='pp',
+    exe_pattern=file_extensions['pp'],
 ))
 checks.append(CheckCommand(
     args=['puppet-lint', '--no-autoloader_layout-check', '/dev/stdin'],
     extension='pp',
+    exe_pattern=file_extensions['pp'],
     config_files=[CommittedFile('.puppet-lint.rc')],
 ))
 
@@ -89,18 +110,21 @@ tox_file = CommittedFile('tox.ini')
 flake8_check = CheckCommand(
     args=['flake8', '-'],
     extension='py',
+    exe_pattern=file_extensions['py'],
     config_files=[setup_file, tox_file, CommittedFile('.flake8')],
 )
 checks.append(flake8_check)
 checks.append(CheckCommand(
     args=['pycodestyle', '-'],
     extension='py',
+    exe_pattern=file_extensions['py'],
     config_files=[setup_file, tox_file],
     preferred_checks=[flake8_check],
 ))
 checks.append(CheckCommand(
     args=['pyflakes'],
     extension='py',
+    exe_pattern=file_extensions['py'],
     preferred_checks=[flake8_check],
 ))
 
@@ -108,12 +132,14 @@ checks.append(CheckCommand(
 checks.append(CheckCommand(
     args=['rubocop', '--format=emacs', '--stdin', '/dev/stdin'],
     extension='rb',
+    exe_pattern=file_extensions['rb'],
 ))
 
 # Shell
 checks.append(CheckCommand(
     args=['shellcheck', '--format=gcc', '/dev/stdin'],
     extension='sh',
+    exe_pattern=file_extensions['sh'],
     bogus_return_code=True,
 ))
 
@@ -122,6 +148,7 @@ package_config = CommittedFile('package.json')
 eslint_check = CheckCommand(
     args=['eslint', '--format=unix', '--quiet', '--stdin'],
     extension='js',
+    exe_pattern=file_extensions['js'],
     config_files=[
         package_config,
         CommittedFile('.eslint.js'),
@@ -139,6 +166,7 @@ checks.append(eslint_check)
 jshint_check = CheckCommand(
     args=['jshint', '--reporter=unix', '/dev/stdin'],
     extension='js',
+    exe_pattern=file_extensions['js'],
     config_files=[package_config, CommittedFile('.jshintrc')],
     preferred_checks=[eslint_check],
 )
@@ -146,6 +174,7 @@ checks.append(jshint_check)
 jscs_check = CheckCommand(
     args=['jscs', '--max-errors=-1', '--reporter=unix'],
     extension='js',
+    exe_pattern=file_extensions['js'],
     config_files=[
         package_config,
         CommittedFile('.jscsrc'),
@@ -158,6 +187,7 @@ checks.append(jscs_check)
 checks.append(CheckCommand(
     args=['standard', '--stdin'],
     extension='js',
+    exe_pattern=file_extensions['js'],
     header=2,
     preferred_checks=[eslint_check, jshint_check, jscs_check],
 ))
@@ -166,6 +196,7 @@ checks.append(CheckCommand(
 checks.append(CheckCommand(
     args=['phpcs', '-q', '--report=emacs'],
     extension='php',
+    exe_pattern=file_extensions['php'],
     config_files=[
         CommittedFile('phpcs.xml'),
         CommittedFile('phpcs.xml.dist'),
