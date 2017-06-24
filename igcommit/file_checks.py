@@ -163,10 +163,6 @@ class CommittedFileByExtensionCheck(CommittedFileCheck):
         if obj.symlink():
             return None
 
-        # There is no point of checking empty files by their type.
-        if not obj.get_content():
-            return None
-
         # We are being prepared for a committed file at last.  In this step,
         # we need to match the file with the specified file extension.
         # We first check the extension from the name of the file, and then
