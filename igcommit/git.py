@@ -212,10 +212,10 @@ class CommittedFile(object):
         return self in self.commit.get_changed_files()
 
     def regular(self):
-        return self.mode[1] == '1'
+        return self.mode[:2] == '10'
 
     def symlink(self):
-        return self.mode[1] == '2'
+        return self.mode[:2] == '12'
 
     def owner_can_execute(self):
         owner_bits = int(self.mode[-3])
