@@ -244,7 +244,8 @@ class CommittedFile(object):
         content = self.get_content()
         if not content.startswith(b'#!'):
             return None
-        return content[len(b'#!'):].split(None, 1)[0].decode('utf-8')
+        content = content[len(b'#!'):].strip()
+        return content.split(None, 1)[0].decode('utf-8')
 
     def get_shebang_exe(self):
         """Get the executable from the shebang"""
