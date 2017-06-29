@@ -99,7 +99,7 @@ class Runner(object):
 def main():
     try:
         state = Runner().run()
-    except:
+    except Exception:
         # Flush the problems we have printed so far to avoid the traceback
         # appearing in between them.
         stdout.flush()
