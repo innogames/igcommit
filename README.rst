@@ -163,13 +163,22 @@ Version 2.0
 
 Version 2.1
     * Add [TEMP] to recognized commit tags
-    * Fix getting the changes of the initial commit (Zheng Wei)
+    * Fix getting the changes of the initial commit (Zheng Wei <www.zvv.cn@gmail.com>)
     * Fix various file descriptor leaks
     * Check commit summaries more strictly
     * Check shebangs of non-executable files too
     * Don't check on empty file contents
     * Improve unicode support on Python 2
     * Fix checking symlink targets
+
+Version 2.2
+    * Fix ``eslint`` configuration (Jerevia <zhaoliming@ichaomeng.com>)
+    * Accepts commits with ``[TEMP]`` with issues
+    * Stop skipping empty files
+    * Make sure not to get unknown file contents
+    * Move file extensions to config
+    * Increase timestamp comparison tolerance for 1 more minute
+    * Handle spaces on shebangs
 
 
 License
