@@ -28,7 +28,6 @@ setup(
     keywords=(
         'syntax-checker git git-hook python ' +
         ' '.join(c.args[0] for c in checks if hasattr(c, 'args'))
-
     ),
     entry_points={
         'console_scripts': [
