@@ -229,8 +229,11 @@ class CheckCommand(CommittedFileByExtensionCheck):
             stdout=PIPE,
             stderr=STDOUT,
         )
-        with self._proc.stdin as fd:
-            fd.write(self.committed_file.get_content())
+        try:
+            with self._proc.stdin as fd:
+                fd.write(self.committed_file.get_content())
+        except BrokenPipeError:
+            pass
 
     def get_problems(self):
         line_buffer = []
