@@ -48,11 +48,26 @@ class Runner(object):
 
     def expand_checks_to_input(self, checks, line):
         line_split = line.split()
-        commit = Commit(line_split[1])
-        if not commit:
+        ref_path_split = line_split[2].split('/', 2)
+        if ref_path_split[0] != 'refs' or len(ref_path_split) != 3:
+            # We have no idea what this is.
             return
 
-        commit_list = commit.get_new_commit_list(line_split[2])
+        commit = Commit(line_split[1])
+        if not commit:
+            # This is a delete.  We don't check anything on deletes.
+            return
+
+        if ref_path_split[1] == 'heads':
+            name = line_split[2]
+            for check in self.expand_checks_to_branch(checks, commit, name):
+                yield check
+        elif ref_path_split[1] == 'tags':
+            for check in self.expand_checks_to_commit(checks, commit):
+                yield check
+
+    def expand_checks_to_branch(self, checks, commit, name):
+        commit_list = commit.get_new_commit_list(name)
 
         # Appending the actual commit on the list to the new ones makes
         # testing easier.
