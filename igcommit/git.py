@@ -98,7 +98,11 @@ class Commit(object):
     def get_author(self):
         if not self.content_fetched:
             self._fetch_content()
-        return self._author
+        # When pushing tags there is no author attribute
+        try:
+            return self._author
+        except AttributeError:
+            return ''
 
     def get_committer(self):
         if not self.content_fetched:
