@@ -61,10 +61,10 @@ class CheckMisleadingMergeCommit(CommitListCheck):
     merge_template = "Merge branch '{}'"
 
     def get_problems(self):
-        ref_name = self.commit_list.ref_path.rsplit('/', 1)[-1]
+        branch_name = self.commit_list.branch_name
         for commit in self.commit_list:
             summary = commit.get_summary()
-            if summary.startswith(self.merge_template.format(ref_name)):
+            if summary.startswith(self.merge_template.format(branch_name)):
                 yield Severity.WARNING, 'merge commit to itself'
             elif summary.startswith(self.merge_template.format('master')):
                 yield Severity.WARNING, 'merge commit master'

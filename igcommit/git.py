@@ -18,15 +18,14 @@ class CommitList(list):
     """Routines on a list of sequential commits"""
     ref_path = None
 
-    def __init__(self, other, ref_path=None):
+    def __init__(self, other, branch_name):
         super(CommitList, self).__init__(other)
-        if ref_path:
-            self.ref_path = ref_path
+        self.branch_name = branch_name
 
     def __str__(self):
         name = '{}..{}'.format(self[0], self[-1])
         if self.ref_path:
-            name += ' ({})'.format(self.ref_path)
+            name += ' ({})'.format(self.branch_name)
         return name
 
 
@@ -52,7 +51,7 @@ class Commit(object):
     def __eq__(self, other):
         return isinstance(other, Commit) and self.commit_id == other.commit_id
 
-    def get_new_commit_list(self, ref_path):
+    def get_new_commit_list(self, branch_name):
         """Get the list of parent new commits in order"""
         output = check_output([
             git_exe_path,
@@ -62,7 +61,7 @@ class Commit(object):
             '--all',
             '--reverse',
         ]).decode('utf-8')
-        commit_list = CommitList([], ref_path)
+        commit_list = CommitList([], branch_name)
         for commit_id in output.splitlines():
             commit = Commit(commit_id, commit_list)
             commit_list.append(commit)
