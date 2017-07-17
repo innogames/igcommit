@@ -83,9 +83,9 @@ class Commit(object):
             if line.startswith(b'parent '):
                 self._parents.append(Commit(line[len(b'parent '):].rstrip()))
             elif line.startswith(b'author '):
-                self._author = Contribution.parse(line[len(b'author '):])
+                self._author = Contributor.parse(line[len(b'author '):])
             elif line.startswith(b'committer '):
-                self._committer = Contribution.parse(line[len(b'committer '):])
+                self._committer = Contributor.parse(line[len(b'committer '):])
         for line in lines:
             self._message_lines.append(line.decode('utf-8'))
         self.content_fetched = True
@@ -158,7 +158,7 @@ class Commit(object):
         return self.changed_files
 
 
-class Contribution(object):
+class Contributor(object):
     """Routines on contribution properties of a commit"""
 
     def __init__(self, name, email, timestamp):
