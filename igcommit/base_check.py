@@ -72,16 +72,20 @@ class BaseCheck(object):
 
     def print_problems(self):
         header_printed = False
-        for severity, problem in self.get_problems():
+        for severity, problem in self.evaluate_problems():
             if not header_printed:
                 print('=== {} ==='.format(self))
                 header_printed = True
             print('{}: {}'.format(severity.name, problem))
-            if severity <= Severity.ERROR:
-                self.set_state(CheckState.FAILED)
         if header_printed:
             print('')
         self.set_state(CheckState.DONE)
+
+    def evaluate_problems(self):
+        for severity, problem in self.get_problems():
+            if severity <= Severity.ERROR:
+                self.set_state(CheckState.FAILED)
+            yield severity, problem
 
     def __str__(self):
         return type(self).__name__

@@ -246,12 +246,17 @@ class CheckCommand(CommittedFileByExtensionCheck):
                     continue
                 yield self._format_problem(line_buffer.pop(0))
 
+    def evaluate_problems(self):
+        can_fail = self.committed_file.commit.content_can_fail()
+        if can_fail and self.bogus_return_code:
+            for item in super(CheckCommand, self).evaluate_problems():
+                yield item
+        else:
+            for item in self.get_problems():
+                yield item
+
         return_code = self._proc.wait()
-        if (
-            return_code != 0 and
-            not self.bogus_return_code and
-            not self.committed_file.commit.content_can_fail()
-        ):
+        if can_fail and not self.bogus_return_code and return_code != 0:
             self.set_state(CheckState.FAILED)
 
     def _format_problem(self, line):

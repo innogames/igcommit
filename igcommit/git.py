@@ -126,7 +126,7 @@ class Commit(object):
         return tags, rest
 
     def content_can_fail(self):
-        return any(
+        return not any(
             t in ['HOTFIX', 'MESS', 'TEMP', 'WIP']
             for t in self.parse_tags()[0]
         )
