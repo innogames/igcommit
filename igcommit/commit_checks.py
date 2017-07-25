@@ -74,7 +74,7 @@ class CheckCommitSummary(CommitCheck):
         'HOTFIX',
         'MESS',
         'REFACTORING',
-        'REVIEW'
+        'REVIEW',
         'SECURITY',
         'STYLE',
         'TASK',
