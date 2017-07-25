@@ -180,6 +180,13 @@ Version 2.2
     * Increase timestamp comparison tolerance for 1 more minute
     * Handle spaces on shebangs
 
+Version 2.3
+    * Handle check command failing immediately
+    * Support pushed tags
+    * Fix failing on file check with bogus return code
+    * Include list of commit tags on warning
+    * Fix recognising commit tags ``[REVIEW]`` and ``[SECURITY]``
+
 
 License
 -------
