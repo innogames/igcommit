@@ -116,7 +116,13 @@ class CheckCommitSummary(CommitCheck):
                 )
             if tag_upper not in CheckCommitSummary.commit_tags:
                 yield (
-                    Severity.WARNING, 'commit tag [{}] not on list'.format(tag)
+                    Severity.WARNING,
+                    'commit tag [{}] not on the list {}'.format(
+                        tag, ', '.join(
+                            '[{}]'.format(t)
+                            for t in CheckCommitSummary.commit_tags
+                        )
+                    )
                 )
             if tag_upper in used_tags:
                 yield Severity.ERROR, 'duplicate commit tag [{}]'.format(tag)
