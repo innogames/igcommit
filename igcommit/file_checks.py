@@ -6,6 +6,8 @@ Copyright (c) 2016, InnoGames GmbH
 
 from __future__ import unicode_literals
 
+from os import remove
+from os.path import exists
 from subprocess import Popen, PIPE, STDOUT
 
 from igcommit.base_check import BaseCheck, CheckState, Severity
@@ -194,31 +196,39 @@ class CheckCommand(CommittedFileByExtensionCheck):
         return new
 
     def _prepare_configs(self, commit):
+        """Update the configuration files, return true if any exist
+
+        Git pre-receive hooks can work on bare Git repositories.  Those
+        repositories has no actual files, only the .git database.  We
+        need to materialize the configuration files on their locations
+        for the check commands to find them.
+        """
+        # XXX It is not really safe to manage those configuration files
+        # like this.  The workspace might not be a good place to write
+        # things.  Also, it is not safe to update these files, when they
+        # are changed on different commits, because we run the commands
+        # in parallel.  We are ignoring all those problems, until they
+        # start happening on production.
+
         config_exists = False
         for config_file in self.config_files:
             prev_commit = config_file.commit
             config_file.commit = commit
 
-            if not config_file.exists():
-                continue
-            config_exists = True
+            if config_file.exists():
+                config_exists = True
 
-            # If the file is not changed on this commit, we can skip
-            # downloading.
-            if (prev_commit and (prev_commit == commit or (
-                prev_commit.commit_list == commit.commit_list and
-                not config_file.changed()
-            ))):
-                continue
+                # If the file is not changed on this commit, we can skip
+                # downloading.
+                if (prev_commit and (prev_commit == commit or (
+                    prev_commit.commit_list == commit.commit_list and
+                    not config_file.changed()
+                ))):
+                    with open(config_file.path, 'wb') as fd:
+                        fd.write(config_file.get_content())
 
-            # We have to download the configuration file to the current
-            # workspace to let the command find it.  It is not really safe
-            # to do that.  The workspace might not be a good place to write
-            # things.  Also, it is not safe to update this file, when it is
-            # changed on different commits, because we run the commands
-            # in parallel.  We are ignoring those problems, until they
-            # start happening on production.
-            config_file.write()
+            elif exists(config_file.path):
+                remove(config_file.path)
 
         return config_exists
 

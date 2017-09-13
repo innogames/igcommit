@@ -270,14 +270,3 @@ class CommittedFile(object):
         if path.startswith('..'):
             return None
         return type(self)(path, self.commit)
-
-    def write(self):
-        """Write the file contents to the location its supposed to be
-
-        The Git pre-receive hooks can work on bare Git repositories.  Those
-        repositories has no actual files, only the .git database.  We need
-        to materialize the configuration files on their locations for
-        the syntax checking tools to find them.
-        """
-        with open(self.path, 'wb') as fd:
-            fd.write(self.get_content())
