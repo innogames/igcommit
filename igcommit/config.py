@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """igcommit - Configuration of the checks
 
-Copyright (c) 2016, InnoGames GmbH
+Copyright (c) 2018, InnoGames GmbH
 """
 
 from __future__ import unicode_literals
@@ -44,6 +44,7 @@ checks.append(CheckChangedFilePaths())
 
 # File meta checks
 file_extensions = {
+    'coffee': re_compile('^coffee'),
     'php': re_compile('^php'),
     'pp': re_compile('^puppet'),
     'py': re_compile('^python'),
@@ -62,6 +63,11 @@ checks.append(CheckExecutable(
     ],
 ))
 checks.append(CheckSymlink())
+
+# Language independent configuration files
+setup_config = CommittedFile('setup.cfg')
+tox_config = CommittedFile('tox.ini')
+package_config = CommittedFile('package.json')
 
 # CSS
 checks.append(CheckCommand(
@@ -105,20 +111,18 @@ checks.append(CheckCommand(
 ))
 
 # Python
-setup_file = CommittedFile('setup.cfg')
-tox_file = CommittedFile('tox.ini')
 flake8_check = CheckCommand(
     args=['flake8', '-'],
     extension='py',
     exe_pattern=file_extensions['py'],
-    config_files=[setup_file, tox_file, CommittedFile('.flake8')],
+    config_files=[setup_config, tox_config, CommittedFile('.flake8')],
 )
 checks.append(flake8_check)
 checks.append(CheckCommand(
     args=['pycodestyle', '-'],
     extension='py',
     exe_pattern=file_extensions['py'],
-    config_files=[setup_file, tox_file],
+    config_files=[setup_config, tox_config],
     preferred_checks=[flake8_check],
 ))
 checks.append(CheckCommand(
@@ -144,7 +148,6 @@ checks.append(CheckCommand(
 ))
 
 # JavaScript
-package_config = CommittedFile('package.json')
 eslint_check = CheckCommand(
     args=['eslint', '--format=unix', '--quiet', '--stdin'],
     extension='js',
@@ -190,6 +193,15 @@ checks.append(CheckCommand(
     exe_pattern=file_extensions['js'],
     header=2,
     preferred_checks=[eslint_check, jshint_check, jscs_check],
+))
+
+# CoffeeScript
+checks.append(CheckCommand(
+    args=['coffeelint', '--stdin', '--reporter=csv'],
+    extension='coffee',
+    exe_pattern=file_extensions['coffee'],
+    header=1,
+    config_files=[CommittedFile('coffeelint.json'), package_config],
 ))
 
 # PHP

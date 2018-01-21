@@ -53,6 +53,7 @@ Features
 * Check Ruby files with ``rubocop``
 * Check shell scripts with ``shellcheck``
 * Check JavaScript files with ``eslint``, ``jshint``, ``jscs``, or ``standard``
+* Check CoffeeScript files with ``coffeelint``
 * Check PHP files with ``phpcs``
 * Run the external check commands in parallel
 * Validate JSON, XML, YAML file formats
@@ -96,6 +97,7 @@ pycodestyle     setup.cfg, or tox.ini                       optional
 eslint          eslint.(js|yaml|yml|json), or package.json  required
 jshint          .jshintrc, or package.json                  optional
 jscs            .jscsrc, .jscs.json, or package.json        required
+coffeelint      coffeelint.json, or package.json            optional
 phpcs           phpcs.xml, or phpcs.xml.dist                optional
 ==============  ==========================================  ========
 
