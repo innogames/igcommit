@@ -141,9 +141,9 @@ available on the ``PATH`` is not going to be used.
 Testing
 -------
 
-I found it useful to check what the script would have complained if it would
-be active on different Git repositories.  You can run a command like this
-to test it on a Git repository against last 50 commits::
+I found it useful to check what the script would have complained if it had
+been active on different Git repositories.  You can run a command like this
+to test this inside a Git repository against last 50 commits::
 
     git log --reverse --oneline HEAD~50..HEAD |
         sed 's:\([^ ]*\) .*:\1 \1 refs/heads/master:' |
