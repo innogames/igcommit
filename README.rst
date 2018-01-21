@@ -189,6 +189,10 @@ Version 2.3
     * Include list of commit tags on warning
     * Fix recognising commit tags ``[REVIEW]`` and ``[SECURITY]``
 
+Version 2.4
+    * Fix recognising removed configuration files
+    * Support `coffeelint`
+
 
 License
 -------
