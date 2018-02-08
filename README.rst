@@ -193,6 +193,9 @@ Version 2.4
     * Fix recognising removed configuration files
     * Support `coffeelint`
 
+Version 2.5
+    * Fix unicode issue on Python 2 for XML, YAML, and JSON (jcoetsie)
+
 
 License
 -------

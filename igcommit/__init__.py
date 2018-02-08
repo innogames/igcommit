@@ -4,4 +4,4 @@
 Copyright (c) 2018, InnoGames GmbH
 """
 
-VERSION = (2, 4)
+VERSION = (2, 5)
