@@ -165,7 +165,7 @@ Version 2.0
 
 Version 2.1
     * Add [TEMP] to recognized commit tags
-    * Fix getting the changes of the initial commit (Zheng Wei <www.zvv.cn@gmail.com>)
+    * Fix getting the changes of the initial commit (Zheng Wei)
     * Fix various file descriptor leaks
     * Check commit summaries more strictly
     * Check shebangs of non-executable files too
@@ -174,7 +174,7 @@ Version 2.1
     * Fix checking symlink targets
 
 Version 2.2
-    * Fix ``eslint`` configuration (Jerevia <zhaoliming@ichaomeng.com>)
+    * Fix ``eslint`` configuration (Jerevia)
     * Accepts commits with ``[TEMP]`` with issues
     * Stop skipping empty files
     * Make sure not to get unknown file contents
