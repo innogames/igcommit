@@ -203,7 +203,7 @@ class CheckCommand(CommittedFileByExtensionCheck):
         need to materialize the configuration files on their locations
         for the check commands to find them.
         """
-        # XXX It is not really safe to manage those configuration files
+        # XXX: It is not really safe to manage those configuration files
         # like this.  The workspace might not be a good place to write
         # things.  Also, it is not safe to update these files, when they
         # are changed on different commits, because we run the commands
@@ -324,7 +324,7 @@ class FormatCheck(CommittedFileByExtensionCheck):
     def get_problems(self):
         assert self.load_func and self.exception_cls
         try:
-            self.load_func(self.committed_file.get_content().decode('utf-8'))
+            self.load_func(self.committed_file.get_content())
         except self.exception_cls as error:
             yield Severity.ERROR, str(error)
 
@@ -340,13 +340,27 @@ class CheckJSON(FormatCheck):
 
         self.load_func = loads
 
-        # JSONDecodeError does not exist on old Python versions.
+        # JSONDecodeError does not exist on Python 2.
         try:
             from json.decoder import JSONDecodeError
         except ImportError:
             pass
         else:
             self.exception_cls = JSONDecodeError
+
+            # XXX: We monkey-patch get_problems() to add the .decode() call,
+            # because json.loads() on Python 3 versions before 3.6 doesn't
+            # accept bytes as input.
+            # TODO: Remove once we don't support Python 3.5
+            def get_problems(self):
+                assert self.load_func and self.exception_cls
+                try:
+                    self.load_func(
+                        self.committed_file.get_content().decode('utf-8')
+                    )
+                except self.exception_cls as error:
+                    yield Severity.ERROR, str(error)
+            type(self).get_problems = get_problems
 
         return True
 
