@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """igcommit - Setup
 
-Copyright (c) 2017, InnoGames GmbH
+Copyright (c) 2017 InnoGames GmbH
 """
 
 from setuptools import setup

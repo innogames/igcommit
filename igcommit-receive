@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """igcommit - The Git pre-receive hook to validate commits
 
-Copyright (c) 2016, InnoGames GmbH
+Copyright (c) 2016 InnoGames GmbH
 """
 # NOTE: This binary is provided for convenience.  It is nice to be able to run
 # the checks from the repository.  This is not included on the releases.  We
