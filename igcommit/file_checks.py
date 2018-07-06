@@ -18,9 +18,9 @@ from igcommit.utils import get_exe_path
 class CommittedFileCheck(BaseCheck):
     """Parent class for checks on a single committed file
 
-    To check the files, we have to skip for_commit_list(), for_commit(),
-    and clone ourself on for_committed_file().  The subclasses has additional
-    logic on those to filter out themselves for some cases.
+    To check the files, we have to clone ourself when we are being prepared
+    for the CommittedFile.  The subclasses has additional logic on those
+    to filter out themselves for some cases.
     """
     committed_file = None
 

@@ -41,8 +41,8 @@ class BaseCheck(object):
     """The parent class of all checks
 
     Checks are expanded to different objects by cloning.  The subclasses
-    has to extend for_commit_list(), for_commit(), and/or for_committed_file()
-    methods to clone the check.
+    has to override prepare() method to clone the check at appropriate
+    stage.
     """
     preferred_checks = []
     state = CheckState.NEW
