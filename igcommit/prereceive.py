@@ -97,6 +97,11 @@ class Runner(object):
                 yield check
 
     def expand_checks_to_file(self, checks, changed_file):
+        # We first need to wait for the previous checks on the same file
+        # to finish.  If one of them failed already, we don't bother checking
+        # the same file again.  The committer should return back to her
+        # commit she broke the file.  It makes too much noise to complain
+        # about the same file on multiple commits.
         previous_checks = self.changed_file_checks.setdefault(
             changed_file.path, []
         )
