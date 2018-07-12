@@ -6,7 +6,6 @@ Copyright (c) 2016 InnoGames GmbH
 
 from __future__ import print_function, unicode_literals
 
-from collections import defaultdict
 from fileinput import input
 from sys import stdout, stderr
 from traceback import print_exc
@@ -20,7 +19,7 @@ from igcommit.utils import iter_buffer
 class Runner(object):
     def __init__(self):
         self.checked_commit_ids = set()
-        self.changed_file_checks = defaultdict(list)
+        self.changed_file_checks = dict()
 
     def run(self):
         state = CheckState.NEW
@@ -98,7 +97,10 @@ class Runner(object):
                 yield check
 
     def expand_checks_to_file(self, checks, changed_file):
-        for check in self.changed_file_checks[changed_file.path]:
+        previous_checks = self.changed_file_checks.setdefault(
+            changed_file.path, []
+        )
+        for check in previous_checks:
             assert check.state >= CheckState.CLONED
             # Wait for the check to run
             while check.state < CheckState.DONE:
@@ -108,7 +110,7 @@ class Runner(object):
 
         for check in prepare_checks(checks, changed_file):
             yield check
-            self.changed_file_checks[changed_file.path].append(check)
+            previous_checks.append(check)
 
 
 def main():
