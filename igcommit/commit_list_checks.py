@@ -133,9 +133,11 @@ class CheckContributors(CommitListCheck):
     def prepare(self, obj):
         new = super(CheckContributors, self).prepare(obj)
         if new and isinstance(obj, CommitList):
-            self.email_index = {}
-            self.domain_index = {}
-            self.name_index = {}
+            new.email_index = {}
+            new.domain_index = {}
+            new.name_index = {}
+
+        return new
 
     def get_problems(self):
         old_contributors = self.get_old_contributors()

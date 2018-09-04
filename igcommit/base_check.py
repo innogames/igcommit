@@ -82,6 +82,7 @@ class BaseCheck(object):
         self.set_state(CheckState.DONE)
 
     def evaluate_problems(self):
+        assert self.state == CheckState.CLONED
         for severity, problem in self.get_problems():
             if severity <= Severity.ERROR:
                 self.set_state(CheckState.FAILED)
