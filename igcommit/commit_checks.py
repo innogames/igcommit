@@ -73,6 +73,7 @@ class CheckCommitSummary(CommitCheck):
         'FEATURE',
         'HOTFIX',
         'MESS',
+        'MIGRATE',
         'REFACTORING',
         'REVIEW',
         'SECURITY',
