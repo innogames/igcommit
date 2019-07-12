@@ -54,16 +54,11 @@ class Runner(object):
             # This is a deletion.  We don't check anything on deletes.
             return
 
+        name = line_split[2]
         if ref_path_split[1] == 'heads':
-            name = line_split[2]
-            for check in self.expand_checks_to_branch(checks, commit, name):
-                yield check
+            commit_list = CommitList(commit.get_new_commits(), name)
         elif ref_path_split[1] == 'tags':
-            for check in self.expand_checks_to_commit(checks, commit):
-                yield check
-
-    def expand_checks_to_branch(self, checks, commit, name):
-        commit_list = CommitList(commit.get_new_commits(), name)
+            commit_list = CommitList([commit], name)
 
         # Appending the actual commit on the list to the new ones makes
         # testing easier.
