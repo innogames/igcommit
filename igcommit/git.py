@@ -30,9 +30,8 @@ class Commit(object):
     """Routines on a single commit"""
     null_commit_id = '0000000000000000000000000000000000000000'
 
-    def __init__(self, commit_id, commit_list=None):
+    def __init__(self, commit_id):
         self.commit_id = commit_id
-        self.commit_list = commit_list
         self.content_fetched = False
         self.changed_files = None
 
@@ -48,7 +47,7 @@ class Commit(object):
     def __eq__(self, other):
         return isinstance(other, Commit) and self.commit_id == other.commit_id
 
-    def get_new_commit_list(self, branch_name):
+    def get_new_commits(self):
         """Get the list of parent new commits in order"""
         output = check_output([
             git_exe_path,
@@ -58,11 +57,8 @@ class Commit(object):
             '--all',
             '--reverse',
         ]).decode('utf-8')
-        commit_list = CommitList([], branch_name)
         for commit_id in output.splitlines():
-            commit = Commit(commit_id, commit_list)
-            commit_list.append(commit)
-        return commit_list
+            yield Commit(commit_id)
 
     def _fetch_content(self):
         content = check_output(

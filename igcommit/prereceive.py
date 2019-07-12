@@ -9,7 +9,7 @@ from traceback import print_exc
 
 from igcommit.base_check import CheckState, prepare_checks
 from igcommit.config import checks
-from igcommit.git import Commit
+from igcommit.git import CommitList, Commit
 from igcommit.utils import iter_buffer
 
 
@@ -63,7 +63,7 @@ class Runner(object):
                 yield check
 
     def expand_checks_to_branch(self, checks, commit, name):
-        commit_list = commit.get_new_commit_list(name)
+        commit_list = CommitList(commit.get_new_commits(), name)
 
         # Appending the actual commit on the list to the new ones makes
         # testing easier.

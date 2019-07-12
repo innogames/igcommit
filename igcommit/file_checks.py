@@ -217,10 +217,9 @@ class CheckCommand(CommittedFileByExtensionCheck):
 
                 # If the file is not changed on this commit, we can skip
                 # downloading.
-                if (prev_commit and (prev_commit == commit or (
-                    prev_commit.commit_list == commit.commit_list and
-                    not config_file.changed()
-                ))):
+                if (prev_commit and (
+                    prev_commit == commit or not config_file.changed()
+                )):
                     with open(config_file.path, 'wb') as fd:
                         fd.write(config_file.get_content())
 
