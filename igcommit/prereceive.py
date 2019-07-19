@@ -4,12 +4,12 @@ Copyright (c) 2020 InnoGames GmbH
 """
 
 from fileinput import input
-from sys import stdout, stderr
+from sys import stderr, stdout
 from traceback import print_exc
 
 from igcommit.base_check import CheckState, prepare_checks
 from igcommit.config import checks
-from igcommit.git import CommitList, Commit
+from igcommit.git import Commit, CommitList
 from igcommit.utils import iter_buffer
 
 

@@ -2,10 +2,11 @@
 
 Copyright (c) 2020 InnoGames GmbH
 """
+
 from json.decoder import JSONDecodeError
 from os import remove
 from os.path import exists
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import PIPE, Popen, STDOUT
 
 from igcommit.base_check import BaseCheck, CheckState, Severity
 from igcommit.git import Commit, CommittedFile

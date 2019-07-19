@@ -5,28 +5,28 @@ Copyright (c) 2020 InnoGames GmbH
 
 from re import compile as re_compile
 
+from igcommit.commit_checks import (
+    CheckChangedFilePaths,
+    CheckCommitMessage,
+    CheckCommitSummary,
+)
 from igcommit.commit_list_checks import (
+    CheckContributors,
     CheckDuplicateCommitSummaries,
     CheckMisleadingMergeCommit,
     CheckTimestamps,
-    CheckContributors,
-)
-from igcommit.commit_checks import (
-    CheckCommitMessage,
-    CheckCommitSummary,
-    CheckChangedFilePaths,
 )
 from igcommit.file_checks import (
-    CheckExecutable,
-    CheckSymlink,
     CheckCommand,
+    CheckExecutable,
     CheckJSON,
+    CheckSymlink,
     CheckXML,
     CheckYAML,
 )
 from igcommit.git import CommittedFile
 
-checks = []  # type: list
+checks = []
 
 # Commit list checks
 checks.append(CheckDuplicateCommitSummaries())
