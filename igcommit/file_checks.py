@@ -162,6 +162,11 @@ class CommittedFileByExtensionCheck(CommittedFileCheck):
 
         return None
 
+    def __str__(self):
+        return '{} "{}" on {}'.format(
+            type(self).__name__, self.extension, self.committed_file
+        )
+
 
 class CheckCommand(CommittedFileByExtensionCheck):
     """Check command to be executed on file contents"""
@@ -307,66 +312,12 @@ class CheckCommand(CommittedFileByExtensionCheck):
         )
 
 
-class FormatCheck(CommittedFileByExtensionCheck):
+class CheckLoading(CommittedFileByExtensionCheck):
     load_func = None
     exception_cls = ValueError
 
-    def prepare(self, obj):
-        new = super(FormatCheck, self).prepare(obj)
-        if new and not new.load_func:
-            if not new.configure():
-                return None
-        return new
-
     def get_problems(self):
-        assert self.load_func and self.exception_cls
         try:
             self.load_func(self.committed_file.get_content())
         except self.exception_cls as error:
             yield Severity.ERROR, str(error)
-
-
-class CheckJSON(FormatCheck):
-    extension = 'json'
-
-    def configure(self):
-        try:
-            from json import loads
-        except ImportError:
-            return False
-
-        # We need lambda to add the .decode() call, because json.loads()
-        # on Python 3 versions before 3.6 doesn't accept bytes as input.
-        # TODO: Remove once we don't support Python 3.5
-        self.load_func = lambda s: loads(s.decode('utf-8'))
-        self.exception_cls = JSONDecodeError
-
-        return True
-
-
-class CheckXML(FormatCheck):
-    extension = 'xml'
-
-    def configure(self):
-        try:
-            from xml.etree import ElementTree
-        except ImportError:
-            return False
-
-        self.load_func = ElementTree.fromstring
-        self.exception_cls = ElementTree.ParseError
-        return True
-
-
-class CheckYAML(FormatCheck):
-    extension = 'yaml'
-
-    def configure(self):
-        try:
-            from yaml import load, YAMLError
-        except ImportError:
-            return False
-
-        self.load_func = load
-        self.exception_cls = YAMLError
-        return True
