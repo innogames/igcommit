@@ -49,7 +49,7 @@ class BaseCheck:
             # We expect all of the arguments to be initialized with defaults
             # on the class.
             assert hasattr(type(self), key)
-            if value:
+            if value != getattr(self, key):
                 setattr(self, key, value)
 
     def clone(self):
