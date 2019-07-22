@@ -103,17 +103,6 @@ class CheckExecutable(CommittedFileCheck):
                 yield Severity.WARNING, 'redundant file extension'
             return
 
-        # If the file has an extension we don't know about, we test if
-        # the executable matches with any extension we know.  If so, it
-        # should probably now have this extension.
-        for key, pattern in self.file_extensions.items():
-            if pattern.search(exe):
-                yield (
-                    Severity.WARNING,
-                    'shebang executable {} matches with file extension ".{}"'
-                    .format(exe, key)
-                )
-
 
 class CheckSymlink(CommittedFileCheck):
     """Special check for symlinks"""
