@@ -8,7 +8,7 @@ from enum import IntEnum
 
 class CheckState(IntEnum):
     NEW = 0
-    CLONED = 1
+    READY = 1
     DONE = 2
     FAILED = 3
 
@@ -52,20 +52,21 @@ class BaseCheck:
             if value != getattr(self, key):
                 setattr(self, key, value)
 
-    def clone(self):
-        new = type(self)(**vars(self))
-        new.state = CheckState.CLONED
-        return new
-
-    def set_state(self, state):
-        assert state > CheckState.CLONED
-        self.state = max(self.state, state)
-
     def prepare(self, obj):
+        assert self.state < CheckState.READY
         for check in self.preferred_checks:
             if check.prepare(obj):
                 return None
         return self
+
+    def clone(self):
+        new = type(self)(**vars(self))
+        new.state = CheckState.READY
+        return new
+
+    def set_state(self, state):
+        assert state > CheckState.READY
+        self.state = max(self.state, state)
 
     def print_problems(self):
         header_printed = False
@@ -79,7 +80,7 @@ class BaseCheck:
         self.set_state(CheckState.DONE)
 
     def evaluate_problems(self):
-        assert self.state == CheckState.CLONED
+        assert self.state == CheckState.READY
         for severity, problem in self.get_problems():
             if severity <= Severity.ERROR:
                 self.set_state(CheckState.FAILED)
@@ -97,11 +98,15 @@ def prepare_checks(checks, obj, next_checks=None):
     """
     for check in checks:
         prepared_check = check.prepare(obj)
-        if prepared_check:
-            cloned = prepared_check.state >= CheckState.CLONED
-            assert next_checks is not None or cloned
+        if not prepared_check:
+            continue
 
-            if cloned:
-                yield prepared_check
-            else:
-                next_checks.append(prepared_check)
+        if prepared_check.state >= CheckState.READY:
+            # The newly ready check must be cloned from the existing object.
+            assert prepared_check is not check
+            yield prepared_check
+        else:
+            # The check must be ready, if there are no more objects for it
+            # to be prepared.
+            assert next_checks is not None
+            next_checks.append(prepared_check)

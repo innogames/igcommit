@@ -116,10 +116,12 @@ def expand_checks_to_file(checks, changed_file, changed_file_checks):
     # file on multiple commits.
     previous_checks = changed_file_checks.setdefault(changed_file.path, [])
     for check in previous_checks:
-        assert check.state >= CheckState.CLONED
+        assert check.state >= CheckState.READY
+
         # Wait for the check to run
         while check.state < CheckState.DONE:
             yield None
+
         if check.state >= CheckState.FAILED:
             return
 
