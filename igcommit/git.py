@@ -255,7 +255,8 @@ class CommittedFile(object):
         """Get the symlink target as same kind of instance
 
         We just return None, if the target has no chance to be on
-        the repository."""
+        the repository.
+        """
         content = self.get_content()
         if isabs(content):
             return None
