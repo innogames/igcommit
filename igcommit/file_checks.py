@@ -136,6 +136,10 @@ class CommittedFileByExtensionCheck(CommittedFileCheck):
         # All instances of this must specify a file extension.
         assert new.extension
 
+        # We cannot rely on the file type, if it's under templates/.
+        if 'templates/' in obj.path:
+            return None
+
         # First, we try to match with the file extension.  We should not
         # continue for symlinks, because we cannot and should not validate
         # the file contents of them.
