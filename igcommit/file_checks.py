@@ -57,7 +57,7 @@ class CheckExecutable(CommittedFileCheck):
                 yield Severity.ERROR, 'executable file without shebang'
         else:
             # We are not bothering to check the shebang for unknown file
-            # extensions.
+            # extensions, because it's expensive to get the file contents.
             extension = self.committed_file.get_extension()
             if not extension or extension in self.file_extensions:
                 if self.committed_file.get_shebang():
