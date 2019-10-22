@@ -147,7 +147,7 @@ class Commit(object):
             ]).decode('utf-8')
             changed_files = []
             for line in output.splitlines():
-                line_split = line.split()
+                line_split = line.split(None, 5)
                 assert len(line_split) == 6
                 assert line_split[0].startswith(':')
                 file_mode = line_split[1]
