@@ -29,7 +29,7 @@ from igcommit.file_checks import (
 )
 from igcommit.git import CommittedFile
 
-checks = []
+checks = []  # type: list
 
 # Commit list checks
 checks.append(CheckDuplicateCommitSummaries())
@@ -137,6 +137,7 @@ checks.append(CheckCommand(
     args=['rubocop', '--format=emacs', '--stdin', '/dev/stdin'],
     extension='rb',
     exe_pattern=file_extensions['rb'],
+    config_files=[CommittedFile('.rubocop.yml')],
 ))
 
 # Shell
