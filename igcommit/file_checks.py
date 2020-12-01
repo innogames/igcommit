@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
 """igcommit - Checks on files committed to Git
 
-Copyright (c) 2016 InnoGames GmbH
+Copyright (c) 2020 InnoGames GmbH
 """
-
-from __future__ import unicode_literals
-
+from json.decoder import JSONDecodeError
 from os import remove
 from os.path import exists
 from subprocess import Popen, PIPE, STDOUT
@@ -339,28 +336,21 @@ class CheckJSON(FormatCheck):
             return False
 
         self.load_func = loads
+        self.exception_cls = JSONDecodeError
 
-        # JSONDecodeError does not exist on Python 2.
-        try:
-            from json.decoder import JSONDecodeError
-        except ImportError:
-            pass
-        else:
-            self.exception_cls = JSONDecodeError
-
-            # XXX: We monkey-patch get_problems() to add the .decode() call,
-            # because json.loads() on Python 3 versions before 3.6 doesn't
-            # accept bytes as input.
-            # TODO: Remove once we don't support Python 3.5
-            def get_problems(self):
-                assert self.load_func and self.exception_cls
-                try:
-                    self.load_func(
-                        self.committed_file.get_content().decode('utf-8')
-                    )
-                except self.exception_cls as error:
-                    yield Severity.ERROR, str(error)
-            type(self).get_problems = get_problems
+        # XXX: We monkey-patch get_problems() to add the .decode() call,
+        # because json.loads() on Python 3 versions before 3.6 doesn't
+        # accept bytes as input.
+        # TODO: Remove once we don't support Python 3.5
+        def get_problems(self):
+            assert self.load_func and self.exception_cls
+            try:
+                self.load_func(
+                    self.committed_file.get_content().decode('utf-8')
+                )
+            except self.exception_cls as error:
+                yield Severity.ERROR, str(error)
+        type(self).get_problems = get_problems
 
         return True
 

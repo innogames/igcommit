@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
 """igcommit - Checks on Git commits
 
-Copyright (c) 2016 InnoGames GmbH
+Copyright (c) 2020 InnoGames GmbH
 """
-
-from __future__ import unicode_literals
 
 from igcommit.base_check import BaseCheck, Severity
 from igcommit.git import Commit

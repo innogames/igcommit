@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
 """igcommit - Pre-receive hook routines
 
-Copyright (c) 2016 InnoGames GmbH
+Copyright (c) 2020 InnoGames GmbH
 """
-
-from __future__ import print_function, unicode_literals
 
 from fileinput import input
 from sys import stdout, stderr
@@ -54,7 +51,7 @@ class Runner(object):
 
         commit = Commit(line_split[1])
         if not commit:
-            # This is a delete.  We don't check anything on deletes.
+            # This is a deletion.  We don't check anything on deletes.
             return
 
         if ref_path_split[1] == 'heads':

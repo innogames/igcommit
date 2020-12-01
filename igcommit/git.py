@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
 """igcommit - Git routines
 
-Copyright (c) 2016 InnoGames GmbH
+Copyright (c) 2020 InnoGames GmbH
 """
-
-from __future__ import unicode_literals
 
 from os.path import isabs, join as joinpath, normpath
 from subprocess import check_output
