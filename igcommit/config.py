@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
 """igcommit - Configuration of the checks
 
-Copyright (c) 2018 InnoGames GmbH
+Copyright (c) 2020 InnoGames GmbH
 """
-
-from __future__ import unicode_literals
 
 from re import compile as re_compile
 

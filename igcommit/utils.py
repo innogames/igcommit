@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
 """igcommit - Utility functions
 
-Copyright (c) 2016 InnoGames GmbH
+Copyright (c) 2020 InnoGames GmbH
 """
-
-from __future__ import unicode_literals
 
 from os import environ, access, X_OK
 

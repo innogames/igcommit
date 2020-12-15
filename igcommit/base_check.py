@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
 """igcommit - The base check class
 
-Copyright (c) 2016 InnoGames GmbH
+Copyright (c) 2020 InnoGames GmbH
 """
-
-from __future__ import unicode_literals
 
 from enum import IntEnum
 
@@ -26,7 +23,7 @@ class Severity(IntEnum):
 
     @classmethod
     def split(cls, line):
-        """Search the severities in the begging of the string
+        """Search the severities in the beginning of the string
 
         It returns the highest severity when non match.
         """
@@ -37,10 +34,10 @@ class Severity(IntEnum):
         return severity, line
 
 
-class BaseCheck(object):
+class BaseCheck:
     """The parent class of all checks
 
-    Checks are expanded to different objects by cloning.  The subclasses
+    Checks are expanded to different objects by cloning. The subclasses
     has to override prepare() method to clone the check at appropriate
     stage.
     """

@@ -132,8 +132,7 @@ IDE Integration
 Dependencies
 ------------
 
-The script has no dependencies on Python 3.4 or above.  It runs on Python 2
-as well with the backport of enum library `enum34`.  The script executes
+The script has no dependencies on Python 3.4 or above.  The script executes
 the validation commands using the shell.  The necessary ones for checked
 repositories need to be installed separately.  See the complete list of
 commands on the `config.py <igcommit/config.py>`_.  The commands which are not
@@ -195,6 +194,9 @@ Version 2.4
 
 Version 2.5
     * Fix unicode issue on Python 2 for XML, YAML, and JSON (jcoetsie)
+
+Version 3.0
+    * Drop Python 2 support
 
 
 License
