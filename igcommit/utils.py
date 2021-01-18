@@ -8,6 +8,10 @@ from os import X_OK, access, environ
 
 
 def get_exe_path(exe):
+    """Traverse the PATH to find where the executable is
+
+    This should behave similar to the shell built-in "which".
+    """
     for dir_path in environ['PATH'].split(':'):
         path = dir_path.strip('"') + '/' + exe
         if access(path, X_OK):
