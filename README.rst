@@ -99,6 +99,7 @@ jshint          .jshintrc, or package.json                  optional
 phpcs           phpcs.xml, or phpcs.xml.dist                optional
 puppet-lint     .puppet-lint.rc                             optional
 pycodestyle     setup.cfg, or tox.ini                       optional
+rubocop         .rubocop.yml                                optional
 ==============  ==========================================  ========
 
 
