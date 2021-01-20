@@ -6,7 +6,7 @@ Copyright (c) 2020 InnoGames GmbH
 from time import time
 
 from igcommit.base_check import BaseCheck, Severity
-from igcommit.git import CommitList, Commit
+from igcommit.git import Commit, CommitList
 
 
 class CommitListCheck(BaseCheck):

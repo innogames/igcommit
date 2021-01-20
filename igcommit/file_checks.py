@@ -2,10 +2,11 @@
 
 Copyright (c) 2020 InnoGames GmbH
 """
+
 from json.decoder import JSONDecodeError
 from os import remove
 from os.path import exists
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import PIPE, Popen, STDOUT
 
 from igcommit.base_check import BaseCheck, CheckState, Severity
 from igcommit.git import Commit, CommittedFile
@@ -56,7 +57,7 @@ class CheckExecutable(CommittedFileCheck):
                 yield Severity.ERROR, 'executable file without shebang'
         else:
             # We are not bothering to check the shebang for unknown file
-            # extensions.
+            # extensions, because it's expensive to get the file contents.
             extension = self.committed_file.get_extension()
             if not extension or extension in self.file_extensions:
                 if self.committed_file.get_shebang():
@@ -102,17 +103,6 @@ class CheckExecutable(CommittedFileCheck):
                 yield Severity.WARNING, 'redundant file extension'
             return
 
-        # If the file has an extension we don't know about, we test if
-        # the executable matches with any extension we know.  If so, it
-        # should probably now have this extension.
-        for key, pattern in self.file_extensions.items():
-            if pattern.search(exe):
-                yield (
-                    Severity.WARNING,
-                    'shebang executable {} matches with file extension ".{}"'
-                    .format(exe, key)
-                )
-
 
 class CheckSymlink(CommittedFileCheck):
     """Special check for symlinks"""
@@ -146,6 +136,10 @@ class CommittedFileByExtensionCheck(CommittedFileCheck):
         # All instances of this must specify a file extension.
         assert new.extension
 
+        # We cannot rely on the file type, if it's under templates/.
+        if 'templates/' in obj.path:
+            return None
+
         # First, we try to match with the file extension.  We should not
         # continue for symlinks, because we cannot and should not validate
         # the file contents of them.
@@ -160,6 +154,11 @@ class CommittedFileByExtensionCheck(CommittedFileCheck):
                 return new
 
         return None
+
+    def __str__(self):
+        return '{} "{}" on {}'.format(
+            type(self).__name__, self.extension, self.committed_file
+        )
 
 
 class CheckCommand(CommittedFileByExtensionCheck):
@@ -217,10 +216,9 @@ class CheckCommand(CommittedFileByExtensionCheck):
 
                 # If the file is not changed on this commit, we can skip
                 # downloading.
-                if (prev_commit and (prev_commit == commit or (
-                    prev_commit.commit_list == commit.commit_list and
-                    not config_file.changed()
-                ))):
+                if (prev_commit and (
+                    prev_commit == commit or not config_file.changed()
+                )):
                     with open(config_file.path, 'wb') as fd:
                         fd.write(config_file.get_content())
 
@@ -307,77 +305,12 @@ class CheckCommand(CommittedFileByExtensionCheck):
         )
 
 
-class FormatCheck(CommittedFileByExtensionCheck):
+class CheckLoading(CommittedFileByExtensionCheck):
     load_func = None
     exception_cls = ValueError
 
-    def prepare(self, obj):
-        new = super(FormatCheck, self).prepare(obj)
-        if new and not new.load_func:
-            if not new.configure():
-                return None
-        return new
-
     def get_problems(self):
-        assert self.load_func and self.exception_cls
         try:
             self.load_func(self.committed_file.get_content())
         except self.exception_cls as error:
             yield Severity.ERROR, str(error)
-
-
-class CheckJSON(FormatCheck):
-    extension = 'json'
-
-    def configure(self):
-        try:
-            from json import loads
-        except ImportError:
-            return False
-
-        self.load_func = loads
-        self.exception_cls = JSONDecodeError
-
-        # XXX: We monkey-patch get_problems() to add the .decode() call,
-        # because json.loads() on Python 3 versions before 3.6 doesn't
-        # accept bytes as input.
-        # TODO: Remove once we don't support Python 3.5
-        def get_problems(self):
-            assert self.load_func and self.exception_cls
-            try:
-                self.load_func(
-                    self.committed_file.get_content().decode('utf-8')
-                )
-            except self.exception_cls as error:
-                yield Severity.ERROR, str(error)
-        type(self).get_problems = get_problems
-
-        return True
-
-
-class CheckXML(FormatCheck):
-    extension = 'xml'
-
-    def configure(self):
-        try:
-            from xml.etree import ElementTree
-        except ImportError:
-            return False
-
-        self.load_func = ElementTree.fromstring
-        self.exception_cls = ElementTree.ParseError
-        return True
-
-
-class CheckYAML(FormatCheck):
-    extension = 'yaml'
-
-    def configure(self):
-        try:
-            from yaml import load, YAMLError
-        except ImportError:
-            return False
-
-        self.load_func = load
-        self.exception_cls = YAMLError
-        return True

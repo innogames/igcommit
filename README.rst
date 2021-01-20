@@ -197,6 +197,14 @@ Version 2.5
 
 Version 3.0
     * Drop Python 2 support
+    * Fix handling filenames with spaces (Friz-zy)
+
+Version 3.1
+    * Stop complaining about the same commit for Git tags
+    * Fix checking contributor names and email addresses
+    * Stop complaining about file extensions we don't know about
+    * Filter out checking format of files under ``templates/`` directories
+    * Improve code quality and style
 
 
 License

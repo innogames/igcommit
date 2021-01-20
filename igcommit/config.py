@@ -3,30 +3,31 @@
 Copyright (c) 2020 InnoGames GmbH
 """
 
+from json import loads
+from json.decoder import JSONDecodeError
 from re import compile as re_compile
+from xml.etree import ElementTree
 
+from igcommit.commit_checks import (
+    CheckChangedFilePaths,
+    CheckCommitMessage,
+    CheckCommitSummary,
+)
 from igcommit.commit_list_checks import (
+    CheckContributors,
     CheckDuplicateCommitSummaries,
     CheckMisleadingMergeCommit,
     CheckTimestamps,
-    CheckContributors,
-)
-from igcommit.commit_checks import (
-    CheckCommitMessage,
-    CheckCommitSummary,
-    CheckChangedFilePaths,
 )
 from igcommit.file_checks import (
-    CheckExecutable,
-    CheckSymlink,
     CheckCommand,
-    CheckJSON,
-    CheckXML,
-    CheckYAML,
+    CheckExecutable,
+    CheckLoading,
+    CheckSymlink,
 )
 from igcommit.git import CommittedFile
 
-checks = []  # type: list
+checks = []
 
 # Commit list checks
 checks.append(CheckDuplicateCommitSummaries())
@@ -214,6 +215,26 @@ checks.append(CheckCommand(
 ))
 
 # Data exchange formats
-checks.append(CheckJSON())
-checks.append(CheckXML())
-checks.append(CheckYAML())
+checks.append(CheckLoading(
+    extension='json',
+    # We need lambda to add the .decode() call, because json.loads()
+    # on Python 3 versions before 3.6 doesn't accept bytes as input.
+    # TODO: Remove once we don't support Python 3.5
+    load_func=lambda s: loads(s.decode('utf-8')),
+    exception_cls=JSONDecodeError,
+))
+checks.append(CheckLoading(
+    extension='xml',
+    load_func=ElementTree.fromstring,
+    exception_cls=ElementTree.ParseError,
+))
+try:
+    from yaml import YAMLError, load
+except ImportError:
+    pass
+else:
+    checks.append(CheckLoading(
+        extension='yaml',
+        load_func=load,
+        exception_cls=YAMLError,
+    ))

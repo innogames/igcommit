@@ -3,7 +3,7 @@
 Copyright (c) 2020 InnoGames GmbH
 """
 
-from os import environ, access, X_OK
+from os import X_OK, access, environ
 
 
 def get_exe_path(exe):
