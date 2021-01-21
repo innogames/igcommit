@@ -1,6 +1,7 @@
 """igcommit - Pre-receive hook routines
 
 Copyright (c) 2021 InnoGames GmbH
+Portions Copyright (c) 2021 Emre Hasegeli
 """
 
 from fileinput import input

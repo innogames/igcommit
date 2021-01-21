@@ -1,6 +1,7 @@
 """igcommit - Configuration of the checks
 
 Copyright (c) 2021 InnoGames GmbH
+Portions Copyright (c) 2021 Emre Hasegeli
 """
 
 from json import loads
