@@ -1,6 +1,6 @@
 """igcommit - Git routines
 
-Copyright (c) 2020 InnoGames GmbH
+Copyright (c) 2021 InnoGames GmbH
 """
 
 from os.path import isabs, join as joinpath, normpath

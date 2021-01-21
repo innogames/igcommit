@@ -1,6 +1,6 @@
 """igcommit - Configuration of the checks
 
-Copyright (c) 2020 InnoGames GmbH
+Copyright (c) 2021 InnoGames GmbH
 """
 
 from json import loads

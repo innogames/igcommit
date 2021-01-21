@@ -1,6 +1,6 @@
 """igcommit - Checks on Git commit lists
 
-Copyright (c) 2020 InnoGames GmbH
+Copyright (c) 2021 InnoGames GmbH
 """
 
 from time import time

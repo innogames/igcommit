@@ -1,6 +1,6 @@
 """igcommit - Checks on files committed to Git
 
-Copyright (c) 2020 InnoGames GmbH
+Copyright (c) 2021 InnoGames GmbH
 """
 
 from os import remove
