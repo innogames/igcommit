@@ -89,16 +89,17 @@ configuration files has to be on the top level of the Git repository.
 ==============  ==========================================  ========
 Syntax Checker   Configuration File
 ==============  ==========================================  ========
-csslint         .csslintrc                                  optional
-htmlhint        .htmlhintrc                                 optional
-puppet-lint     .puppet-lint.rc                             optional
-flake8          .flake8, setup.cfg, or tox.ini              optional
-pycodestyle     setup.cfg, or tox.ini                       optional
-eslint          eslint.(js|yaml|yml|json), or package.json  required
-jshint          .jshintrc, or package.json                  optional
-jscs            .jscsrc, .jscs.json, or package.json        required
 coffeelint      coffeelint.json, or package.json            optional
+csslint         .csslintrc                                  optional
+eslint          eslint.(js|yaml|yml|json), or package.json  required
+flake8          .flake8, setup.cfg, or tox.ini              optional
+htmlhint        .htmlhintrc                                 optional
+jscs            .jscsrc, .jscs.json, or package.json        required
+jshint          .jshintrc, or package.json                  optional
 phpcs           phpcs.xml, or phpcs.xml.dist                optional
+puppet-lint     .puppet-lint.rc                             optional
+pycodestyle     setup.cfg, or tox.ini                       optional
+rubocop         .rubocop.yml                                optional
 ==============  ==========================================  ========
 
 

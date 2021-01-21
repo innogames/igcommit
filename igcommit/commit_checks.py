@@ -1,6 +1,7 @@
 """igcommit - Checks on Git commits
 
-Copyright (c) 2020 InnoGames GmbH
+Copyright (c) 2021 InnoGames GmbH
+Portions Copyright (c) 2021 Emre Hasegeli
 """
 
 from igcommit.base_check import BaseCheck, Severity

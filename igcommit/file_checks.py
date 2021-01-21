@@ -1,9 +1,9 @@
 """igcommit - Checks on files committed to Git
 
-Copyright (c) 2020 InnoGames GmbH
+Copyright (c) 2021 InnoGames GmbH
+Portions Copyright (c) 2021 Emre Hasegeli
 """
 
-from json.decoder import JSONDecodeError
 from os import remove
 from os.path import exists
 from subprocess import PIPE, Popen, STDOUT
