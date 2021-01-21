@@ -3,7 +3,6 @@
 Copyright (c) 2020 InnoGames GmbH
 """
 
-from json.decoder import JSONDecodeError
 from os import remove
 from os.path import exists
 from subprocess import PIPE, Popen, STDOUT
