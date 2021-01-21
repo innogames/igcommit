@@ -47,6 +47,25 @@ def run():
 
 
 def expand_checks(checks):
+    """Clone, prepare, and yield the checks
+
+    This is the entry function to start processing the checks.  The processing
+    is done in here for all inputs.  They are the branches and the tags
+    pushed to Git and received by the prereceive hook.
+
+    The processing then continues to list of commits, the commits in every
+    list, and the files changed by those commits by the following functions.
+    Those functions clone the checks we start with in here for every object,
+    so we end up yielding a lot more checks than we start.
+
+    The checks are for different types of objects.  Some of them checks
+    the list of commits, some particular commits, some just files.  These
+    functions in here are agnostic about this.  They would keep preparing
+    them on different levels with different types objects, and yield back
+    the ones that are cloned and become ready.  The processing will stop
+    there.  They will not be passed to the next function after they become
+    ready.
+    """
     checked_commit_ids = set()
     for line in input():
         for check in expand_checks_to_input(checks, line, checked_commit_ids):
