@@ -137,7 +137,11 @@ class CheckCommitSummary(CommitCheck):
 
         rest_len = len(rest)
         if rest_len > 72:
-            yield Severity.ERROR, 'commit summary longer than 72 characters'
+            if rest.startswith('Merge branch '):
+                sev = Severity.WARNING
+            else:
+                sev = Severity.ERROR
+            yield sev, 'commit summary longer than 72 characters'
         elif rest_len > 50:
             yield Severity.WARNING, 'commit summary longer than 50 characters'
 
