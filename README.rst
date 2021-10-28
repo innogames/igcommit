@@ -207,6 +207,9 @@ Version 3.1
     * Filter out checking format of files under ``templates/`` directories
     * Improve code quality and style
 
+Version 3.2
+    * Reduce severity of length for merge commit summary to warning
+
 
 License
 -------
