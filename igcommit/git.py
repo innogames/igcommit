@@ -50,6 +50,10 @@ class Commit(object):
 
     def get_new_commits(self):
         """Get the list of parent new commits in order"""
+
+        # At pre-receive hook we get one id for each branch pushed and need to
+        # find commits to be tested. With the test command from the README.md
+        # this returns nothing.
         output = check_output([
             git_exe_path,
             'rev-list',
