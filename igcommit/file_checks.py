@@ -170,6 +170,7 @@ class CheckCommand(CommittedFileByExtensionCheck):
     config_files = []
     config_required = False
     bogus_return_code = False
+    append_filepath = False
 
     def get_exe_path(self):
         if not self.exe_path:
@@ -225,12 +226,11 @@ class CheckCommand(CommittedFileByExtensionCheck):
         return config_exists
 
     def _prepare_proc(self):
-        self._proc = Popen(
-            [self.get_exe_path()] + self.args[1:],
-            stdin=PIPE,
-            stdout=PIPE,
-            stderr=STDOUT,
-        )
+        args = [self.get_exe_path()] + self.args[1:]
+        if self.append_filepath:
+            args.append(self.committed_file.path)
+
+        self._proc = Popen(args, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
         try:
             with self._proc.stdin as fd:
                 fd.write(self.committed_file.get_content())

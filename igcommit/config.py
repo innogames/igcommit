@@ -133,10 +133,15 @@ checks.append(CheckCommand(
 
 # Ruby
 checks.append(CheckCommand(
-    args=['rubocop', '--format=emacs', '--stdin', '/dev/stdin'],
+    args=['rubocop', '--format=emacs', '--stdin'],
     extension='rb',
     exe_pattern=file_extensions['rb'],
     config_files=[CommittedFile('.rubocop.yml')],
+    # Rubocop takes a FILE argument when using --stdin. This file is not
+    # actually loaded, but only used for stuff like "Exclude" directives.
+    # Otherwise, it would not be possible to exclude specific files in this
+    # scenario. The file contents must still be written to stdin.
+    append_filepath=True,
 ))
 
 # Shell
