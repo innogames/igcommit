@@ -170,6 +170,7 @@ class CheckCommand(CommittedFileByExtensionCheck):
     config_files = []
     config_required = False
     bogus_return_code = False
+    append_filepath = False
 
     def get_exe_path(self):
         if not self.exe_path:
@@ -216,24 +217,20 @@ class CheckCommand(CommittedFileByExtensionCheck):
 
                 # If the file is not changed on this commit, we can skip
                 # downloading.
-                if (prev_commit and (
-                    prev_commit == commit or not config_file.changed()
-                )):
+                if not prev_commit or config_file.changed():
                     with open(config_file.path, 'wb') as fd:
                         fd.write(config_file.get_content())
-
             elif exists(config_file.path):
                 remove(config_file.path)
 
         return config_exists
 
     def _prepare_proc(self):
-        self._proc = Popen(
-            [self.get_exe_path()] + self.args[1:],
-            stdin=PIPE,
-            stdout=PIPE,
-            stderr=STDOUT,
-        )
+        args = [self.get_exe_path()] + self.args[1:]
+        if self.append_filepath:
+            args.append(self.committed_file.path)
+
+        self._proc = Popen(args, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
         try:
             with self._proc.stdin as fd:
                 fd.write(self.committed_file.get_content())
