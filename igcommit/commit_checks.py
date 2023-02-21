@@ -86,6 +86,11 @@ class CheckCommitSummary(CommitCheck):
     category_non_letter_start = True
     category_upper_case_letter = True
     category_trailing_space = True
+    title_non_letter_start = True
+    title_not_capitalized = True
+    title_end_dot = True
+    title_past_tense = True
+    title_continuous_tense = True
 
     @classmethod
     def get_key(cls):
@@ -179,18 +184,18 @@ class CheckCommitSummary(CommitCheck):
             return
 
         first_letter = rest[0]
-        if not first_letter.isalpha():
+        if self.title_non_letter_start and not first_letter.isalpha():
             yield Severity.WARNING, 'commit title starts with non-letter'
-        elif first_letter.upper() != first_letter:
+        elif self.title_not_capitalized and first_letter.upper() != first_letter:
             yield Severity.WARNING, 'commit title not capitalized'
 
-        if rest.endswith('.'):
+        if self.title_end_dot and rest.endswith('.'):
             yield Severity.WARNING, 'commit title ends with a dot'
 
         first_word = rest.split(' ', 1)[0]
-        if first_word.endswith('ed'):
+        if self.title_past_tense and first_word.endswith('ed'):
             yield Severity.WARNING, 'past tense used on commit title'
-        if first_word.endswith('ing'):
+        if self.title_continuous_tense and first_word.endswith('ing'):
             yield Severity.WARNING, 'continuous tense used on commit title'
 
 
