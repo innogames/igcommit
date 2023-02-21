@@ -1,0 +1,12 @@
+{
+	"check_commit_summary": { 
+		"length": 72,
+		"category_non_letter_start": true,
+		"category_upper_case_letter": true,
+		"category_trailing_space": true
+	},
+	"ignore_list": ["commit_message_check", "merge_message_check"],
+	"check_changed_file_paths": { 
+		"extensions": [ "pp", "py", "sh" ] 
+	}
+}

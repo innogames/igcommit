@@ -83,6 +83,9 @@ class CheckCommitSummary(CommitCheck):
     }
 
     length = 50
+    category_non_letter_start = True
+    category_upper_case_letter = True
+    category_trailing_space = True
 
     @classmethod
     def get_key(cls):
@@ -163,11 +166,11 @@ class CheckCommitSummary(CommitCheck):
             yield problem
 
     def get_category_problems(self, category):
-        if not category[0].isalpha():
+        if self.category_non_letter_start and not category[0].isalpha():
             yield Severity.WARNING, 'commit category starts with non-letter'
-        if category.lower() != category:
+        if self.category_upper_case_letter and category.lower() != category:
             yield Severity.WARNING, 'commit category has upper-case letter'
-        if category.rstrip() != category:
+        if self.category_trailing_space and category.rstrip() != category:
             yield Severity.WARNING, 'commit category with trailing space'
 
     def get_title_problems(self, rest):
@@ -194,7 +197,7 @@ class CheckCommitSummary(CommitCheck):
 class CheckChangedFilePaths(CommitCheck):
     """Check file names and directories on a single commit"""
 
-    extensions = ('pp', 'py', 'sh')
+    extensions = ['pp', 'py', 'sh']
 
     @classmethod
     def get_key(cls):
