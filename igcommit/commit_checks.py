@@ -26,15 +26,25 @@ class CommitCheck(BaseCheck):
 
 
 class CheckCommitMessage(CommitCheck):
+    
+    @classmethod
+    def get_key(cls):
+        return 'check_commit_message'
+
+    msg_leading_space = True
+    msg_trailing_space = True
+    msg_single_line_summary = True
+    msg_leading_tab_or_biggerthan_sign = True
+
     def get_problems(self):
         for line_id, line in enumerate(self.commit.get_message_lines()):
             if line_id == 0:
                 continue
             elif line_id == 1:
-                if line.strip():
+                if self.msg_single_line_summary and line.strip():
                     yield Severity.ERROR, 'no single line commit summary'
             else:
-                if line.startswith('    ') or line.startswith('>'):
+                if self.msg_leading_tab_or_biggerthan_sign and (line.startswith('    ') or line.startswith('>')):
                     continue
 
             if line:
@@ -42,24 +52,24 @@ class CheckCommitMessage(CommitCheck):
                     yield problem
 
     def get_line_problems(self, line_number, line):
-        if line.rstrip() != line:
+        if self.msg_trailing_space and line.rstrip() != line:
             line = line.rstrip()
             yield (
                 Severity.ERROR,
                 'line {}: trailing space'.format(line_number)
             )
 
-        if line.lstrip() != line:
+        if self.msg_leading_space and line.lstrip() != line:
             line = line.lstrip()
             yield (
                 Severity.WARNING,
                 'line {}: leading space'.format(line_number)
             )
 
-        if len(line) > 72:
+        if len(line) > self.length:
             yield (
                 Severity.WARNING,
-                'line {}: longer than 72'.format(line_number)
+                'line {}: longer than {}'.format(line_number, str(self.length))
             )
 
 
@@ -117,7 +127,7 @@ class CheckCommitSummary(CommitCheck):
     def get_revert_commit_problems(self, rest):
         if self.revert_commit:
             rest = rest[len('Revert'):]
-            if self.revert_commit and not rest.startswith(' "') or not rest.endswith('"'):
+            if self.revert_commit and (not rest.startswith(' "') or not rest.endswith('"')):
                 yield Severity.WARNING, 'ill-formatted revert commit message'
 
     def get_commit_tag_problems(self, tags, rest):

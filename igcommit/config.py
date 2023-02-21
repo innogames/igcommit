@@ -37,7 +37,7 @@ checks.append(CheckTimestamps())
 checks.append(CheckContributors())
 
 # Commit checks
-checks.append(CheckCommitMessage())
+checks.append(CheckCommitMessage(**config[CheckCommitMessage.get_key()]))
 checks.append(CheckCommitSummary(**config[CheckCommitSummary.get_key()]))
 checks.append(CheckChangedFilePaths(**config[CheckChangedFilePaths.get_key()]))
 

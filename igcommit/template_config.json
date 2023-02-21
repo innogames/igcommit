@@ -9,10 +9,15 @@
 		"title_end_dot": true,
 		"title_past_tense": true,
 		"title_continuous_tense": true,
-		"revert_commit": true
+		"revert_commit": true,
 	},
 	"ignore_list": ["commit_message_check", "merge_message_check"],
 	"check_changed_file_paths": { 
 		"extensions": [ "pp", "py", "sh" ] 
+	},
+	"check_commit_message": {
+		"length": 72,
+		"msg_trailing_space": true,
+		"msg_leading_space": true
 	}
 }
