@@ -173,7 +173,7 @@ class CheckCommitSummary(CommitCheck):
 
         first_letter = rest[0]
         if not first_letter.isalpha():
-            yield Severity.WARNING, 'commit title start with non-letter'
+            yield Severity.WARNING, 'commit title starts with non-letter'
         elif first_letter.upper() != first_letter:
             yield Severity.WARNING, 'commit title not capitalized'
 
