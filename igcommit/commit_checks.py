@@ -189,11 +189,18 @@ class CheckCommitSummary(CommitCheck):
 
 class CheckChangedFilePaths(CommitCheck):
     """Check file names and directories on a single commit"""
+
+    extensions = ('pp', 'py', 'sh')
+
+    @classmethod
+    def get_key(cls):
+        return 'check_changed_file_paths'
+
     def get_problems(self):
         for changed_file in self.commit.get_changed_files():
             extension = changed_file.get_extension()
             if (
-                extension in ('pp', 'py', 'sh') and
+                extension.lower() in self.extensions and
                 changed_file.path != changed_file.path.lower()
             ):
                 yield Severity.ERROR, '{} has upper case'.format(changed_file)

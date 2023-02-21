@@ -9,6 +9,8 @@ from json.decoder import JSONDecodeError
 from re import compile as re_compile
 from xml.etree import ElementTree
 
+config = {'check_changed_file_paths': { "extensions": {"pp", "py", "sh"} } }
+
 from igcommit.commit_checks import (
     CheckChangedFilePaths,
     CheckCommitMessage,
@@ -39,7 +41,7 @@ checks.append(CheckContributors())
 # Commit checks
 checks.append(CheckCommitMessage())
 checks.append(CheckCommitSummary())
-checks.append(CheckChangedFilePaths())
+checks.append(CheckChangedFilePaths(**config[CheckChangedFilePaths.get_key()]))
 
 # File meta checks
 file_extensions = {
