@@ -82,6 +82,12 @@ class CheckCommitSummary(CommitCheck):
         '!!',
     }
 
+    length = 50
+
+    @classmethod
+    def get_key(cls):
+        return 'check_commit_summary'
+
     def get_problems(self):
         tags, rest = self.commit.parse_tags()
         if rest.startswith('['):
@@ -136,14 +142,12 @@ class CheckCommitSummary(CommitCheck):
             return
 
         rest_len = len(rest)
-        if rest_len > 72:
+        if rest_len > self.length:
             if rest.startswith('Merge branch '):
                 sev = Severity.WARNING
             else:
                 sev = Severity.ERROR
-            yield sev, 'commit summary longer than 72 characters'
-        elif rest_len > 50:
-            yield Severity.WARNING, 'commit summary longer than 50 characters'
+            yield sev, f'commit summary longer than {self.length} characters'
 
         if '  ' in rest:
             yield Severity.WARNING, 'multiple spaces'

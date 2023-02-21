@@ -38,7 +38,7 @@ checks.append(CheckContributors())
 
 # Commit checks
 checks.append(CheckCommitMessage())
-checks.append(CheckCommitSummary())
+checks.append(CheckCommitSummary(**config[CheckCommitSummary.get_key()]))
 checks.append(CheckChangedFilePaths(**config[CheckChangedFilePaths.get_key()]))
 
 # File meta checks
