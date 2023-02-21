@@ -148,7 +148,8 @@ class CheckContributors(CommitListCheck):
                 '--no-pager',
                 'log',
                 '--pretty=format:"%H"',
-                f'--author "{author.name}"',
+                '--author',
+                author.name,
                 '-1',
             ]).decode('utf-8')
 
@@ -157,7 +158,8 @@ class CheckContributors(CommitListCheck):
                 '--no-pager',
                 'log',
                 '--pretty=format:"%H"',
-                f'--committer "{committer.name}"',
+                '--committer',
+                committer.name,
                 '-1',
             ]).decode('utf-8')
 
