@@ -3,7 +3,13 @@
 		"length": 72,
 		"category_non_letter_start": true,
 		"category_upper_case_letter": true,
-		"category_trailing_space": true
+		"category_trailing_space": true,
+		"title_non_letter_start": true,
+		"title_not_capitalized": true,
+		"title_end_dot": true,
+		"title_past_tense": true,
+		"title_continuous_tense": true,
+		"revert_commit": true
 	},
 	"ignore_list": ["commit_message_check", "merge_message_check"],
 	"check_changed_file_paths": { 

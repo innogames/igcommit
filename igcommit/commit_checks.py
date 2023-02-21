@@ -91,6 +91,7 @@ class CheckCommitSummary(CommitCheck):
     title_end_dot = True
     title_past_tense = True
     title_continuous_tense = True
+    revert_commit = True
 
     @classmethod
     def get_key(cls):
@@ -114,9 +115,10 @@ class CheckCommitSummary(CommitCheck):
             yield problem
 
     def get_revert_commit_problems(self, rest):
-        rest = rest[len('Revert'):]
-        if not rest.startswith(' "') or not rest.endswith('"'):
-            yield Severity.WARNING, 'ill-formatted revert commit message'
+        if self.revert_commit:
+            rest = rest[len('Revert'):]
+            if not rest.startswith(' "') or not rest.endswith('"'):
+                yield Severity.WARNING, 'ill-formatted revert commit message'
 
     def get_commit_tag_problems(self, tags, rest):
         used_tags = []
