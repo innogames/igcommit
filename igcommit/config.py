@@ -28,6 +28,9 @@ from igcommit.file_checks import (
 )
 from igcommit.git import CommittedFile
 
+# read config file
+config = {'check_commit_summary': {}}
+
 checks = []
 
 # Commit list checks
@@ -38,7 +41,7 @@ checks.append(CheckContributors())
 
 # Commit checks
 checks.append(CheckCommitMessage())
-checks.append(CheckCommitSummary())
+checks.append(CheckCommitSummary(**config[CheckCommitSummary.get_key()]))
 checks.append(CheckChangedFilePaths())
 
 # File meta checks
