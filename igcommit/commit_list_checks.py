@@ -6,8 +6,11 @@ Portions Copyright (c) 2021 Emre Hasegeli
 
 from time import time
 
+
 from igcommit.base_check import BaseCheck, Severity
-from igcommit.git import Commit, CommitList
+from igcommit.git import Commit, CommitList, git_exe_path
+
+from subprocess import check_output
 
 
 class CommitListCheck(BaseCheck):
@@ -138,22 +141,44 @@ class CheckContributors(CommitListCheck):
         return new
 
     def get_problems(self):
-        old_contributors = self.get_old_contributors()
         for commit in self.commit_list:
-            for contributor in commit.get_contributors():
-                found = self.index_contributors(old_contributors, contributor)
+            author, committer = commit.get_contributors()
+            author = check_output([
+                git_exe_path,
+                '--no-pager',
+                'log',
+                '--pretty=format:"%H"',
+                f'--author "{author.name}"',
+                '-1',
+            ]).decode('utf-8')
 
-                for problem in self.check_contributor(contributor, commit):
-                    yield problem
+            committer = check_output([
+                git_exe_path,
+                '--no-pager',
+                'log',
+                '--pretty=format:"%H"',
+                f'--committer "{committer.name}"',
+                '-1',
+            ]).decode('utf-8')
 
-                    # If there are any problems, evidently the contributor
-                    # is not consistent with the indexes.  We override
-                    # the indexes after reporting problem to avoid the same
-                    # ones to be reported again.
-                    found = False
+            contributor = author + committer
+            print(contributor)
+            # use git log to search for author (important that git log just shows us commits before the pre-receive)
+            # use git log to search for committer
+            # if nothing is in there, we know that there is no former commit of those contributors
+            # if found then we directly can check with the last found specific commit
+            # in the end we can store the contributors in a list to not check them again
+            for problem in self.check_contributor(contributor, commit):
+                yield problem
 
-                if not found:
-                    self.index_contributor(contributor, override=True)
+                # If there are any problems, evidently the contributor
+                # is not consistent with the indexes.  We override
+                # the indexes after reporting problem to avoid the same
+                # ones to be reported again.
+                found = False
+
+            if not found:
+                self.index_contributor(contributor, override=True)
 
     def get_old_commits(self):
         """Yield old commits in reverse order
