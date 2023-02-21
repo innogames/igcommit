@@ -75,7 +75,7 @@ class BaseCheck:
             if not header_printed:
                 print('=== {} ==='.format(self))
                 header_printed = True
-            print('{}: {}'.format(severity.name, problem))
+            print('GL_HOOK_ERR: {}: {}'.format(severity.name, problem))
         if header_printed:
             print('')
         self.set_state(CheckState.DONE)
