@@ -117,7 +117,7 @@ class CheckCommitSummary(CommitCheck):
     def get_revert_commit_problems(self, rest):
         if self.revert_commit:
             rest = rest[len('Revert'):]
-            if not rest.startswith(' "') or not rest.endswith('"'):
+            if self.revert_commit and not rest.startswith(' "') or not rest.endswith('"'):
                 yield Severity.WARNING, 'ill-formatted revert commit message'
 
     def get_commit_tag_problems(self, tags, rest):
