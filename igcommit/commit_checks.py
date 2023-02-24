@@ -26,7 +26,7 @@ class CommitCheck(BaseCheck):
 
 
 class CheckCommitMessage(CommitCheck):
-    
+
     @classmethod
     def get_key(cls):
         return 'check_commit_message'
@@ -234,6 +234,7 @@ class CheckChangedFilePaths(CommitCheck):
         for changed_file in self.commit.get_changed_files():
             extension = changed_file.get_extension()
             if (
+                extension and
                 extension.lower() in self.extensions and
                 changed_file.path != changed_file.path.lower()
             ):
