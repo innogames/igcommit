@@ -92,7 +92,8 @@ class CheckCommitSummary(CommitCheck):
         '!!',
     }
 
-    length = 50
+    soft_length = 50
+    hard_length = 72
     category_non_letter_start = True
     category_upper_case_letter = True
     category_trailing_space = True
@@ -102,6 +103,13 @@ class CheckCommitSummary(CommitCheck):
     title_past_tense = True
     title_continuous_tense = True
     revert_commit = True
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if self.soft_length < 0:
+            self.soft_length = float('inf')
+        if self.hard_length < 0:
+            self.hard_length = float('inf')
 
     @classmethod
     def get_key(cls):
@@ -162,12 +170,14 @@ class CheckCommitSummary(CommitCheck):
             return
 
         rest_len = len(rest)
-        if rest_len > self.length:
+        if rest_len > self.hard_length:
             if rest.startswith('Merge branch '):
                 sev = Severity.WARNING
             else:
                 sev = Severity.ERROR
-            yield sev, f'commit summary longer than {self.length} characters'
+            yield sev, f'commit summary longer than {self.hard_length} characters'
+        elif rest_len > self.soft_length:
+            yield Severity.WARNING, f'commit summary longer than {self.soft_length} characters'
 
         if '  ' in rest:
             yield Severity.WARNING, 'multiple spaces'
