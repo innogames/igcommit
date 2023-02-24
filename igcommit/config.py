@@ -28,18 +28,23 @@ from igcommit.file_checks import (
 )
 from igcommit.git import CommittedFile
 
+check_registrar = [
+    CheckDuplicateCommitSummaries,
+    CheckMisleadingMergeCommit,
+    CheckTimestamps,
+    CheckContributors,
+    CheckCommitMessage,
+    CheckCommitSummary,
+    CheckChangedFilePaths,
+]
+check_registrar = {c.get_key(): c for c in check_registrar}
+
+
 checks = []
 
-# Commit list checks
-checks.append(CheckDuplicateCommitSummaries())
-checks.append(CheckMisleadingMergeCommit())
-checks.append(CheckTimestamps())
-checks.append(CheckContributors())
-
-# Commit checks
-checks.append(CheckCommitMessage(**config[CheckCommitMessage.get_key()]))
-checks.append(CheckCommitSummary(**config[CheckCommitSummary.get_key()]))
-checks.append(CheckChangedFilePaths(**config[CheckChangedFilePaths.get_key()]))
+for key, check_class in check_registrar.items():
+    check = check_class()
+    checks.append(check)
 
 # File meta checks
 file_extensions = {
