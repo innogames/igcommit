@@ -33,6 +33,11 @@ class CheckDuplicateCommitSummaries(CommitListCheck):
     on the beginning of other ones.  This covers summaries like "Fix the bug"
     and "Fix the bug really" which is common bad practice for some reason.
     """
+
+    @classmethod
+    def get_key(cls):
+        return 'check_duplicate_commits_summaries'
+
     def prepare(self, obj):
         if isinstance(obj, CommitList) and len(obj) <= 1:
             return None
@@ -58,6 +63,10 @@ class CheckDuplicateCommitSummaries(CommitListCheck):
 class CheckMisleadingMergeCommit(CommitListCheck):
     merge_template = "Merge branch '{}'"
 
+    @classmethod
+    def get_key(cls):
+        return 'check_misleading_merge_commit'
+
     def get_problems(self):
         branch_name = self.commit_list.branch_name
         for commit in self.commit_list:
@@ -70,6 +79,10 @@ class CheckMisleadingMergeCommit(CommitListCheck):
 
 class CheckTimestamps(CommitListCheck):
     current_timestamp = time()
+
+    @classmethod
+    def get_key(cls):
+        return 'check_timestamps'
 
     def get_problems(self):
         previous_author_timestamp = 0
@@ -128,6 +141,11 @@ class CheckContributors(CommitListCheck):
     in behalf of the user with a different email address.  Including
     the domain on the index would let it happen.
     """
+
+    @classmethod
+    def get_key(cls):
+        return 'check_contributors'
+
     def prepare(self, obj):
         new = super(CheckContributors, self).prepare(obj)
         if new and isinstance(obj, CommitList):
