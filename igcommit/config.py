@@ -39,11 +39,57 @@ check_registrar = [
 ]
 check_registrar = {c.get_key(): c for c in check_registrar}
 
+config = {}
+
+
+def read_config_file():
+    config_tries = ['.igcommit.json', '.igcommit.yaml', '.igcommit.yml']
+    for config_try in config_tries:
+        config_file = Path(config_try)
+        if config_file.exists():
+            text = config_file.read_text()
+            config.update(loads(text))
+            break
+
+        config_file = CommittedFile(config_try)
+        if config_file.exists():
+            config.update(loads(config_file.get_content()))
+            break
+    else:
+        return
+
+
+read_config_file()
 
 checks = []
 
+
+class GlobalConfig:
+
+    def __init__(self, prefix=None, log_level=None, ignored=None):
+        self.prefix = prefix
+        self.log_level = log_level
+        self.ignored = ignored or []
+
+    @classmethod
+    def parse(cls, conf: dict):
+        global_config = conf.get('_', dict())
+        prefix = global_config.get('message', {}).get('prefix', None)
+        log_level = global_config.get('log', {}).get('level', None)
+        if log_level is not None:
+            log_level = getattr(Severity, log_level)
+        ignored = global_config.get('ignored', [])
+
+        return GlobalConfig(prefix=prefix, log_level=log_level, ignored=ignored)
+
+
+global_config = GlobalConfig.parse(config)
+
 for key, check_class in check_registrar.items():
-    check = check_class()
+    if key in global_config.ignored:
+        continue
+    check_config = config.get(key, {})
+    check = check_class(**check_config)
     checks.append(check)
 
 # File meta checks
