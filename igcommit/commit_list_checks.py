@@ -127,7 +127,7 @@ class CheckTimestamps(CommitListCheck):
 class CheckContributors(CommitListCheck):
     """Validate consistency of committer and author name and email addresses
 
-    We threat committers and authors the same way in this class.  It is common
+    We treat committers and authors the same way in this class.  It is common
     Git bad practice to commit with different combinations of names and
     email addresses ruining useful statistics that can be made using the Git
     history.  There is not too much we can do about without having
