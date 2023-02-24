@@ -69,16 +69,6 @@ class BaseCheck:
         assert state > CheckState.READY
         self.state = max(self.state, state)
 
-    def print_problems(self):
-        header_printed = False
-        for severity, problem in self.evaluate_problems():
-            if not header_printed:
-                print('=== {} ==='.format(self))
-                header_printed = True
-            print('GL_HOOK_ERR: {}: {}'.format(severity.name, problem))
-        if header_printed:
-            print('')
-        self.set_state(CheckState.DONE)
 
     def evaluate_problems(self):
         assert self.state == CheckState.READY
@@ -86,6 +76,7 @@ class BaseCheck:
             if severity <= Severity.ERROR:
                 self.set_state(CheckState.FAILED)
             yield severity, problem
+        self.set_state(CheckState.DONE)
 
     def __str__(self):
         return type(self).__name__

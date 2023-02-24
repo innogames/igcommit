@@ -41,9 +41,17 @@ def run():
     # (See iter_buffer() to understand how buffering causes parallel
     # processing.)
     for check in iter_buffer(expand_checks(checks), 16):
-        check.print_problems()
+        problems = list(check.evaluate_problems())
         assert check.state >= CheckState.DONE
         state = max(state, check.state)
+        if not problems:
+            continue
+
+        print('=== {} ==='.format(check))
+
+        for severity, problem in problems:
+            print('{}: {}'.format(severity.name, problem))
+            print()
 
     return state
 
