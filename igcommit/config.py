@@ -8,7 +8,9 @@ from json import loads
 from json.decoder import JSONDecodeError
 from re import compile as re_compile
 from xml.etree import ElementTree
+from pathlib import Path
 
+from igcommit.base_check import Severity
 from igcommit.commit_checks import (
     CheckChangedFilePaths,
     CheckCommitMessage,
@@ -90,6 +92,7 @@ for key, check_class in check_registrar.items():
         continue
     check_config = config.get(key, {})
     check = check_class(**check_config)
+    # check = check_class()
     checks.append(check)
 
 # File meta checks
@@ -102,16 +105,18 @@ file_extensions = {
     'sh': re_compile('sh$'),
     'js': re_compile('js$'),
 }
-checks.append(CheckExecutable(
-    file_extensions=file_extensions,
-    general_names=[
-        'exec',
-        'go',
-        'install',
-        'run',
-        'setup',
-    ],
-))
+checks.append(
+    CheckExecutable(
+        file_extensions=file_extensions,
+        general_names=[
+            'exec',
+            'go',
+            'install',
+            'run',
+            'setup',
+        ],
+    )
+)
 checks.append(CheckSymlink())
 
 # Language independent configuration files
@@ -120,45 +125,55 @@ tox_config = CommittedFile('tox.ini')
 package_config = CommittedFile('package.json')
 
 # CSS
-checks.append(CheckCommand(
-    args=['csslint', '--format=compact', '/dev/stdin'],
-    extension='css',
-    config_files=[CommittedFile('.csslintrc')],
-))
+checks.append(
+    CheckCommand(
+        args=['csslint', '--format=compact', '/dev/stdin'],
+        extension='css',
+        config_files=[CommittedFile('.csslintrc')],
+    )
+)
 
 # Go
-checks.append(CheckCommand(
-    args=['golint', '/dev/stdin'],
-    extension='go',
-))
+checks.append(
+    CheckCommand(
+        args=['golint', '/dev/stdin'],
+        extension='go',
+    )
+)
 
 # HTML
-checks.append(CheckCommand(
-    args=['htmlhint', '--format=unix', '/dev/stdin'],
-    extension='html',
-    footer=2,
-    config_files=[CommittedFile('.htmlhintrc')],
-))
+checks.append(
+    CheckCommand(
+        args=['htmlhint', '--format=unix', '/dev/stdin'],
+        extension='html',
+        footer=2,
+        config_files=[CommittedFile('.htmlhintrc')],
+    )
+)
 
 # Puppet
-checks.append(CheckCommand(
-    args=[
-        'puppet',
-        'parser',
-        'validate',
-        '--color=false',
-        '--confdir=/tmp',
-        '--vardir=/tmp',
-    ],
-    extension='pp',
-    exe_pattern=file_extensions['pp'],
-))
-checks.append(CheckCommand(
-    args=['puppet-lint', '--no-autoloader_layout-check', '/dev/stdin'],
-    extension='pp',
-    exe_pattern=file_extensions['pp'],
-    config_files=[CommittedFile('.puppet-lint.rc')],
-))
+checks.append(
+    CheckCommand(
+        args=[
+            'puppet',
+            'parser',
+            'validate',
+            '--color=false',
+            '--confdir=/tmp',
+            '--vardir=/tmp',
+        ],
+        extension='pp',
+        exe_pattern=file_extensions['pp'],
+    )
+)
+checks.append(
+    CheckCommand(
+        args=['puppet-lint', '--no-autoloader_layout-check', '/dev/stdin'],
+        extension='pp',
+        exe_pattern=file_extensions['pp'],
+        config_files=[CommittedFile('.puppet-lint.rc')],
+    )
+)
 
 # Python
 flake8_check = CheckCommand(
@@ -168,40 +183,48 @@ flake8_check = CheckCommand(
     config_files=[setup_config, tox_config, CommittedFile('.flake8')],
 )
 checks.append(flake8_check)
-checks.append(CheckCommand(
-    args=['pycodestyle', '-'],
-    extension='py',
-    exe_pattern=file_extensions['py'],
-    config_files=[setup_config, tox_config],
-    preferred_checks=[flake8_check],
-))
-checks.append(CheckCommand(
-    args=['pyflakes'],
-    extension='py',
-    exe_pattern=file_extensions['py'],
-    preferred_checks=[flake8_check],
-))
+checks.append(
+    CheckCommand(
+        args=['pycodestyle', '-'],
+        extension='py',
+        exe_pattern=file_extensions['py'],
+        config_files=[setup_config, tox_config],
+        preferred_checks=[flake8_check],
+    )
+)
+checks.append(
+    CheckCommand(
+        args=['pyflakes'],
+        extension='py',
+        exe_pattern=file_extensions['py'],
+        preferred_checks=[flake8_check],
+    )
+)
 
 # Ruby
-checks.append(CheckCommand(
-    args=['rubocop', '--format=emacs', '--stdin'],
-    extension='rb',
-    exe_pattern=file_extensions['rb'],
-    config_files=[CommittedFile('.rubocop.yml')],
-    # Rubocop takes a FILE argument when using --stdin. This file is not
-    # actually loaded, but only used for stuff like "Exclude" directives.
-    # Otherwise, it would not be possible to exclude specific files in this
-    # scenario. The file contents must still be written to stdin.
-    append_filepath=True,
-))
+checks.append(
+    CheckCommand(
+        args=['rubocop', '--format=emacs', '--stdin'],
+        extension='rb',
+        exe_pattern=file_extensions['rb'],
+        config_files=[CommittedFile('.rubocop.yml')],
+        # Rubocop takes a FILE argument when using --stdin. This file is not
+        # actually loaded, but only used for stuff like "Exclude" directives.
+        # Otherwise, it would not be possible to exclude specific files in this
+        # scenario. The file contents must still be written to stdin.
+        append_filepath=True,
+    )
+)
 
 # Shell
-checks.append(CheckCommand(
-    args=['shellcheck', '--format=gcc', '/dev/stdin'],
-    extension='sh',
-    exe_pattern=file_extensions['sh'],
-    bogus_return_code=True,
-))
+checks.append(
+    CheckCommand(
+        args=['shellcheck', '--format=gcc', '/dev/stdin'],
+        extension='sh',
+        exe_pattern=file_extensions['sh'],
+        bogus_return_code=True,
+    )
+)
 
 # JavaScript
 eslint_check = CheckCommand(
@@ -243,55 +266,67 @@ jscs_check = CheckCommand(
     preferred_checks=[eslint_check, jshint_check],
 )
 checks.append(jscs_check)
-checks.append(CheckCommand(
-    args=['standard', '--stdin'],
-    extension='js',
-    exe_pattern=file_extensions['js'],
-    header=2,
-    preferred_checks=[eslint_check, jshint_check, jscs_check],
-))
+checks.append(
+    CheckCommand(
+        args=['standard', '--stdin'],
+        extension='js',
+        exe_pattern=file_extensions['js'],
+        header=2,
+        preferred_checks=[eslint_check, jshint_check, jscs_check],
+    )
+)
 
 # CoffeeScript
-checks.append(CheckCommand(
-    args=['coffeelint', '--stdin', '--reporter=csv'],
-    extension='coffee',
-    exe_pattern=file_extensions['coffee'],
-    header=1,
-    config_files=[CommittedFile('coffeelint.json'), package_config],
-))
+checks.append(
+    CheckCommand(
+        args=['coffeelint', '--stdin', '--reporter=csv'],
+        extension='coffee',
+        exe_pattern=file_extensions['coffee'],
+        header=1,
+        config_files=[CommittedFile('coffeelint.json'), package_config],
+    )
+)
 
 # PHP
-checks.append(CheckCommand(
-    args=['phpcs', '-q', '--report=emacs'],
-    extension='php',
-    exe_pattern=file_extensions['php'],
-    config_files=[
-        CommittedFile('phpcs.xml'),
-        CommittedFile('phpcs.xml.dist'),
-    ],
-))
+checks.append(
+    CheckCommand(
+        args=['phpcs', '-q', '--report=emacs'],
+        extension='php',
+        exe_pattern=file_extensions['php'],
+        config_files=[
+            CommittedFile('phpcs.xml'),
+            CommittedFile('phpcs.xml.dist'),
+        ],
+    )
+)
 
 # Data exchange formats
-checks.append(CheckLoading(
-    extension='json',
-    # We need lambda to add the .decode() call, because json.loads()
-    # on Python 3 versions before 3.6 doesn't accept bytes as input.
-    # TODO: Remove once we don't support Python 3.5
-    load_func=lambda s: loads(s.decode('utf-8')),
-    exception_cls=JSONDecodeError,
-))
-checks.append(CheckLoading(
-    extension='xml',
-    load_func=ElementTree.fromstring,
-    exception_cls=ElementTree.ParseError,
-))
+checks.append(
+    CheckLoading(
+        extension='json',
+        # We need lambda to add the .decode() call, because json.loads()
+        # on Python 3 versions before 3.6 doesn't accept bytes as input.
+        # TODO: Remove once we don't support Python 3.5
+        load_func=lambda s: loads(s.decode('utf-8')),
+        exception_cls=JSONDecodeError,
+    )
+)
+checks.append(
+    CheckLoading(
+        extension='xml',
+        load_func=ElementTree.fromstring,
+        exception_cls=ElementTree.ParseError,
+    )
+)
 try:
     from yaml import YAMLError, load
 except ImportError:
     pass
 else:
-    checks.append(CheckLoading(
-        extension='yaml',
-        load_func=load,
-        exception_cls=YAMLError,
-    ))
+    checks.append(
+        CheckLoading(
+            extension='yaml',
+            load_func=load,
+            exception_cls=YAMLError,
+        )
+    )

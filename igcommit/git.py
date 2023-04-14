@@ -180,6 +180,8 @@ class CommittedFile(object):
 
     def __init__(self, path, commit=None, mode=None):
         self.path = path
+        if commit is None:
+            commit = Commit('HEAD')
         self.commit = commit
         assert mode is None or len(mode) == 6
         self.mode = mode

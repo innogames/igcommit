@@ -31,6 +31,7 @@ class CheckCommitMessage(CommitCheck):
     def get_key(cls):
         return 'check_commit_message'
 
+    length = 72
     msg_leading_space = True
     msg_trailing_space = True
     msg_single_line_summary = True

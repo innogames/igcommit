@@ -9,7 +9,7 @@ from sys import stderr, stdout
 from traceback import print_exc
 
 from igcommit.base_check import CheckState, prepare_checks
-from igcommit.config import checks
+from igcommit.config import checks, global_config
 from igcommit.git import Commit, CommitList
 from igcommit.utils import iter_buffer
 
@@ -40,16 +40,25 @@ def run():
     # We only have a limit to avoid consuming too many processes.
     # (See iter_buffer() to understand how buffering causes parallel
     # processing.)
+    # TODO: Don't get the checks directly from config module, but have a Config class being used
+    #       here to read config file per commit or the like and get the checks then out of those
+    #       config objects.
     for check in iter_buffer(expand_checks(checks), 16):
         problems = list(check.evaluate_problems())
         assert check.state >= CheckState.DONE
         state = max(state, check.state)
+        if global_config.log_level is not None:
+            problems = list(filter(lambda p: p[0] <= global_config.log_level, problems))
         if not problems:
             continue
 
+        if global_config.prefix:
+            print(global_config.prefix + ': ', end='')
         print('=== {} ==='.format(check))
 
         for severity, problem in problems:
+            if global_config.prefix:
+                print(global_config.prefix + ': ', end='')
             print('{}: {}'.format(severity.name, problem))
             print()
 
