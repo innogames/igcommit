@@ -6,8 +6,11 @@ Portions Copyright (c) 2021 Emre Hasegeli
 
 from time import time
 
+
 from igcommit.base_check import BaseCheck, Severity
-from igcommit.git import Commit, CommitList
+from igcommit.git import Commit, CommitList, git_exe_path, Contributor
+
+from subprocess import check_output
 
 
 class CommitListCheck(BaseCheck):
@@ -138,118 +141,97 @@ class CheckContributors(CommitListCheck):
         return new
 
     def get_problems(self):
-        old_contributors = self.get_old_contributors()
         for commit in self.commit_list:
             for contributor in commit.get_contributors():
-                found = self.index_contributors(old_contributors, contributor)
-
+                # use git log to search for author (important that git log just shows us commits before the pre-receive)
+                # use git log to search for committer
+                # if nothing is in there, we know that there is no former commit of those contributors
+                # if found then we directly can check with the last found specific commit
+                # in the end we can store the contributors in a list to not check them again
                 for problem in self.check_contributor(contributor, commit):
                     yield problem
-
-                    # If there are any problems, evidently the contributor
-                    # is not consistent with the indexes.  We override
-                    # the indexes after reporting problem to avoid the same
-                    # ones to be reported again.
-                    found = False
-
-                if not found:
-                    self.index_contributor(contributor, override=True)
-
-    def get_old_commits(self):
-        """Yield old commits in reverse order
-
-        We could call "git rev-list" here, but it is easy enough to implement
-        the same using the content we already need for other reasons.  Though
-        "git rev-list" would order the commits nicer, we are not putting any
-        effort to the ordering in here as our caller is not sensitive.
-        """
-        unused_commits = self.commit_list[0].get_parents()
-        commit_ids = {c.commit_id for c in unused_commits}
-        while unused_commits:
-            unused_commit = unused_commits.pop(0)
-            yield unused_commit
-            for commit in unused_commit.get_parents():
-                if commit.commit_id not in commit_ids:
-                    unused_commits.append(commit)
-                    commit_ids.add(commit.commit_id)
-
-    def get_old_contributors(self):
-        for commit in self.get_old_commits():
-            for contributor in commit.get_contributors():
-                yield contributor
-
-    def index_contributor(self, contributor, override=False, dry_run=False):
-        """Index a single contributor
-
-        The function does nothing when the contributor is already indexed.
-        It returns true when if would add the contributor to any index.
-        The dry_run argument is used to test only, if the contributor is
-        indexed.
-        """
-        found = False
-
-        if contributor.email not in self.email_index or override:
-            if not dry_run:
-                self.email_index[contributor.email] = contributor
-            found = True
-
-        domain = contributor.get_email_domain()
-        if domain not in self.domain_index or override:
-            if not dry_run:
-                self.domain_index[domain] = None
-            found = True
-
-        if (contributor.name, domain) not in self.name_index or override:
-            if not dry_run:
-                self.name_index[(contributor.name, domain)] = contributor
-            found = True
-
-        return found
-
-    def index_contributors(self, contributors, searched):
-        """Index contributors until the searched one is found
-
-        The function stops when the searched one is found.  We assume
-        the caller to pass the existing generator again to avoid starting over
-        to search the next one.  It returns with true when the searched one
-        is found; returns with false when all of the items are indexes but
-        the searched one is not found.
-        """
-        while self.index_contributor(searched, dry_run=True):
-            for contributor in contributors:
-                if self.index_contributor(contributor):
-                    break
-            else:
-                return False
-        return True
 
     def check_contributor(self, contributor, commit):
         """Check one contributor against the indexes"""
 
-        other = self.email_index.get(contributor.email)
-        if other and contributor.name != other.name:
-            yield (
-                Severity.ERROR,
-                'contributor of commit {} has a different name "{}" '
-                'than "{}" the contributor with the same email address'
-                .format(commit, contributor.name, other.name),
-            )
+        # TODO: Take always two and check for the latest one.
+        # git log with email -> check if name is the same
+        # `git log ... --author "^.+ <{email}>$" -E
+        for log_check in ['author', 'committer']:
+            commit_hash = check_output([
+                git_exe_path,
+                '--no-pager',
+                'log',
+                '--pretty=format:%H',
+                f'--{log_check}',
+                f'^.+ <{contributor.email}>$',
+                '-E',
+                '-1',
+            ]).decode('utf-8')
+            if commit_hash:
+                break
 
-        domain = contributor.get_email_domain()
-        if domain not in self.domain_index:
+        if commit_hash:
+            commit = Commit(commit_hash)
+            cb = getattr(commit, f'get_{log_check}')
+            other = cb()
+            if other and contributor.name != other.name:
+                yield (
+                    Severity.ERROR,
+                    'contributor of commit {} has a different name "{}" '
+                    'than "{}" the contributor with the same email address'
+                    .format(commit, contributor.name, other.name),
+                )
+
+        # git log with just domain `git log ... --author "^.+ <.*@{get_email_domain()}>$" -E`
+        # if no hash could be found, then this is a new domain
+        for log_check in ['author', 'committer']:
+            commit_hash = check_output([
+                git_exe_path,
+                '--no-pager',
+                'log',
+                '--pretty=format:%H',
+                f'--{log_check}',
+                f'^.+ <.*@{contributor.get_email_domain()}>$',
+                '-E',
+                '-1',
+            ]).decode('utf-8')
+            if commit_hash:
+                break
+
+        if not commit_hash:
             yield (
                 Severity.NOTICE,
                 'contributor of commit {} has a email address with a new '
                 'domain "{}" '
-                .format(commit, domain),
+                .format(commit, contributor.get_email_domain()),
             )
 
-        other = self.name_index.get((contributor.name, domain))
-        if other and contributor.email != other.email:
-            yield (
-                Severity.ERROR,
-                'contributor of commit {} has a different email address "{}" '
-                'with the same domain than "{}" from contributor with '
-                'the same name'
-                .format(commit, contributor.email, other.email),
-            )
+        # git log with name plus email domain
+        # git log ... --author "^{name} <.*@{get_email_domain()}>$"
+        for log_check in ['author', 'committer']:
+            commit_hash = check_output([
+                git_exe_path,
+                '--no-pager',
+                'log',
+                '--pretty=format:%H',
+                f'--{log_check}',
+                f'^{contributor.name} <.*@{contributor.get_email_domain()}>$',
+                '-E',
+                '-1',
+            ]).decode('utf-8')
+            if commit_hash:
+                break
+
+        if commit_hash:
+            commit = Commit(commit_hash)
+            cb = getattr(commit, f'get_{log_check}')
+            other = cb()
+            if other and contributor.email != other.email:
+                yield (
+                    Severity.ERROR,
+                    'contributor of commit {} has a different email address "{}" '
+                    'with the same domain than "{}" from contributor with '
+                    'the same name'
+                    .format(commit, contributor.email, other.email),
+                )
