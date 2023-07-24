@@ -19,6 +19,7 @@ from igcommit.commit_list_checks import (
     CheckDuplicateCommitSummaries,
     CheckMisleadingMergeCommit,
     CheckTimestamps,
+    CheckBranchNameRegexp,
 )
 from igcommit.file_checks import (
     CheckCommand,
@@ -35,6 +36,9 @@ checks.append(CheckDuplicateCommitSummaries())
 checks.append(CheckMisleadingMergeCommit())
 checks.append(CheckTimestamps())
 checks.append(CheckContributors())
+checks.append(CheckBranchNameRegexp(
+    config_files=[CommittedFile('.igcommit-branch-name.conf')]
+))
 
 # Commit checks
 checks.append(CheckCommitMessage())

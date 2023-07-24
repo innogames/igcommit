@@ -4,10 +4,13 @@ Copyright (c) 2021 InnoGames GmbH
 Portions Copyright (c) 2021 Emre Hasegeli
 """
 
+import re
 from time import time
+from os.path import exists
+from os import remove
 
 from igcommit.base_check import BaseCheck, Severity
-from igcommit.git import Commit, CommitList
+from igcommit.git import Commit, CommitList, CommittedFile
 
 
 class CommitListCheck(BaseCheck):
@@ -252,4 +255,98 @@ class CheckContributors(CommitListCheck):
                 'with the same domain than "{}" from contributor with '
                 'the same name'
                 .format(commit, contributor.email, other.email),
+            )
+
+
+class CheckBranchNameRegexp(CommitListCheck):
+    """Check branch names against regular expressions
+
+    The configuration file can contain a list of regular expressions
+    (one per line). The branch names are checked against those,
+    and the commit is rejected if none of them match.
+    """
+
+    config_files = []
+
+    def prepare(self, obj):
+        new = super(CheckBranchNameRegexp, self).prepare(obj)
+        config_exists = new._prepare_configs(obj)
+        if config_exists:
+            return new
+
+    def _prepare_configs(self, commitlist):
+        """Update used configuration files, return true if any exist
+
+        This is copied from file_checks.py and slightly modified.
+        Please check the original file for explanation and
+        shortcomings.
+        """
+        config_exists = False
+        for config_file in self.config_files:
+            prev_commit = config_file.commit
+            # We will check if the config file exists on the latest commit
+            config_file.commit = commitlist[-1]
+
+            if config_file.exists():
+                config_exists = True
+
+                # If the file is not changed on this commit, we can skip
+                # downloading.
+                if not prev_commit or config_file.changed():
+                    with open(config_file.path, 'wb') as fd:
+                        fd.write(config_file.get_content())
+            elif exists(config_file.path):
+                # Not found on the latest commit, but it exists on the
+                # workspace.  Remove it.
+                remove(config_file.path)
+
+        return config_exists
+
+    def get_allowed_regexes(self):
+        for config_file in self.config_files:
+            with open(config_file.path) as f:
+                allowed_regexes = f.read().splitlines()
+        valid_list = []
+        failed_list = []
+        for regexline in allowed_regexes:
+            try:
+                if not regexline.strip():
+                    continue
+                re.compile(regexline)
+                valid_list.append(regexline)
+            except re.error:
+                failed_list.append(regexline)
+        return valid_list, failed_list
+
+    def check_branch_name(self, regexp_list, branch_name):
+        """Fails if the branch name does not match any regexp
+
+        It's enough to fit only one of the allowed patterns
+        """
+        trimmed_branch_name = re.sub('refs/heads/', '', branch_name)
+        for pattern in regexp_list:
+            if re.match(pattern, trimmed_branch_name):
+                return True
+        return False
+
+    def get_problems(self):
+        branch_name = self.commit_list.branch_name
+        valid_regexes, broken_regexes = self.get_allowed_regexes()
+        if broken_regexes:
+            yield (
+                Severity.WARNING,
+                'following string is not a valid pattern '
+                'for branch name comparison:\n{}'
+                .format("\n".join(broken_regexes))
+            )
+        if not self.check_branch_name(valid_regexes, branch_name):
+            yield (
+                Severity.ERROR,
+                '{} is not an allowed branch name.\n'
+                'Branch names must match any of the following '
+                'list of regular expressions:\n{}'
+                .format(
+                    branch_name,
+                    '\n'.join(valid_regexes)
+                )
             )

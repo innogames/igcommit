@@ -44,6 +44,7 @@ Features
 * Accept commits tagged as ``[HOTFIX]``, ``[MESS]``, ``[TEMP]``, or ``[WIP]``
   with issues
 * Check executable bits and shebangs
+* Check for allowed branch names
 * Check symlinks
 * Check CSS files with ``csslint``
 * Check Go files with ``golint``
@@ -209,6 +210,9 @@ Version 3.1
 
 Version 3.2
     * Reduce severity of length for merge commit summary to warning
+
+Version 3.3
+    * Add optional branch name check via regular expressions
 
 
 License
